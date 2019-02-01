@@ -53,7 +53,12 @@ typedef struct {
     char NOM[20];
 } Token;
 
-static int follow_token = false;
+typedef enum{
+    TRUE,
+    FALSE
+} boolean;
+
+static boolean follow_token = false;
 
 static Token tabToken[] = {
     {ABORT_TOKEN ,"abort"},
