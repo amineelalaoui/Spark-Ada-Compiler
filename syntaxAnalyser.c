@@ -370,6 +370,8 @@ boolean program(){
 	return result;
 }
 
+//integer_type_definition -> range T_NUMERIC .. T_NUMERIC | mode expression
+
 boolean integer_type_definition(){
     boolean result = FALSE;
     if(SYM_COUR.CODE == RANGE_TOKEN){
@@ -395,6 +397,9 @@ boolean integer_type_definition(){
     }
     return result;
 }
+
+
+//real_type_definition -> digit T_NUMERIC [range T_NUMERIC .. T_NUMERIC](1-D array) 
 
 boolean real_type_definition(){
     boolean result = FALSE;
@@ -452,6 +457,8 @@ boolean real_type_definition(){
     }
     return result;
 }
+
+//array_type_definition ->array '(' id [range (<> | T_NUMERIC .. T_NUMERIC)] ')' of id
 
 boolean array_type_definition(){
     boolean result = false;
