@@ -509,4 +509,167 @@ boolean array_type_definition(){
     return result;
 }
 
+//record_type_definition -> null record; | record component_list end record
+boolean record_type_definition(){
+    boolean result = FALSE;
+    if(SYM_COUR.CODE == NULL_TOKEN){
+        next_token();
+        if(SYM_COUR.CODE == RECORD_TOKEN){
+            next_token();
+            if(SYM_COUR.CODE == PV_TOKEN){
+                result = true;
+            }
+        }
+    }
+    else{
+        if(SYM_COUR.CODE == RECORD_TOKEN){
+            next_token();
+            if(component_list()){
+                next_token();
+                if(SYM_COUR.CODE == END_TOKEN){
+                    next_token();
+                    if(SYM_COUR.CODE == RECORD_TOKEN){
+                        result = true;
+                    }
+                }
+            }
+        }
+    }
+    return result;
+}
+// component_list -> component_item [component_item]* | null ;
+boolean component_list(){
+    boolean result=FALSE;
+    if(component_item()){
+        do{
+            next_token();
+        }while(SYM_COUR.CODE == component_item());
+        result = TRUE;
+    }
+    else{
+        if(SYM_COUR.CODE == NULL_TOKEN){
+            next_token()
+            if(SYM_COUR.CODE == PV_TOKEN)
+                result = TRUE;
+        }
+    }
+    return result;
+}
+
+//component_item -> id : id [:= expression]
+boolean component_item(){
+    boolean result = FALSE;
+    if(SYM_COUR.CODE == ID_TOKEN){
+        next_token();
+        if(SYM_COUR.CODE == DOUBLE_POINT_TOKEN){
+            next_token();
+            if(SYM_COUR.CODE == ID_TOKEN){
+                next_token();
+                if(SYM_COUR.CODE == AFF_TOKEN){
+                    next_token();
+                    if(expression)
+                        result = TRUE;
+                }
+                else{
+                    result = TRUE;
+                }
+            }
+        }
+    }
+    return result;
+}
+
+//object_number_declaration -> id : (constant | id ) := expression
+boolean object_number_declaration(){
+    boolean result = FALSE;
+    if(SYM_COUR.CODE == ID_TOKEN){
+        next_token();
+        if(SYM_COUR.CODE == DOUBLE_POINT_TOKEN){
+            next_token();
+            //TODO semanticcheck if ID_TOKEN is CONSTANT_TOKEN
+            if(SYM_COUR.CODE == ID_TOKEN ||  SYM_COUR.CODE == CONSTANT_TOKEN){
+                next_token();
+                if(SYM_COUR.CODE == AFF_TOKEN){
+                    next_token();
+                    if(expression()){
+                        next_token()   
+                        if(SYM_COUR.CODE == PV_TOKEN)
+                            result = TRUE;
+                    }                   
+                }
+            }
+        }
+    }
+    return result;
+}
+
+// sequence_statement -> statement {statement}*
+boolean sequence_statement(){
+    boolean result = FALSE;
+    if(statement()){
+        do{
+            next_token();
+        }while(statement());
+        result = TRUE;
+    }
+    return result;
+}
+
+//statement -> simple_statement | compound_statement
+boolean statement(){
+    return (simple_statement() || compound_statement())
+
+}
+
+//simple_statement ::= null_statement | procedure_call_or_assign_statement | exit_statement | goto_statement | return_statement
+
+boolean simple_statement(){
+    return (null_statement() || procedure_call_or_assign_statement() || exit_statement() || goto_statement() || return_statement());
+}
+
+//null_statement -> null ;
+boolean null_statement(){
+    boolean result = FALSE;
+    if(SYM_COUR.CODE == NULL_TOKEN){
+        next_token();
+        if(SYM_COUR.CODE == PV_TOKEN)
+            result = TRUE;
+    }
+    return result;
+}
+
+//exit_statement -> exit [id] [when expression];
+boolean exit_statement(){
+    boolean result = false;;
+    if(SYM_COUR.CODE == EXIT_TOKEN){
+        next_token();
+        if(SYM_COUR.CODE == ID_TOKEN){
+            result = TRUE;
+        }
+        else if(SYM_COUR.CODE == WHEN_TOKEN){
+                next_token();
+                if(expression())
+                    result = true;
+                else
+                    result = FALSE;
+        }
+        else
+            result = TRUE;
+    }
+    return result;
+}
+
+//goto_statement -> goto id;
+boolean goto_statement(){
+    if(SYM_COUR.CODE == GOTO_TOKEN){
+        next_token();
+        if(SYM_COUR.CODE == ID_TOKEN)
+            return TRUE;
+    }
+    return FALSE;
+}
+
+
+
+
 
