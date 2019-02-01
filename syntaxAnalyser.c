@@ -27,7 +27,9 @@ boolean component_item();
 boolean sequence_statement();
 boolean statement();
 boolean simple_statement();
-
+boolean null_statement();
+boolean exit_statement();
+boolean goto_statement();
 
 int main(int argc, char* argv[]){
   /**  if (!argv[1]) {
