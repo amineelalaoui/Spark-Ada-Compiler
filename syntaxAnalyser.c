@@ -48,32 +48,6 @@ int main(int argc, char* argv[]){
     return 0;
 }
 
-// nombre -> NUMBER suite_nombre
-
-boolean nombre(){
-    if(SYM_COUR.CODE == NUM_TOKEN){
-        nextToken();
-        if(suite_nombre())
-            return true;
-    }
-    return false;
-}
-
-// suite_nombre -> . NUMBER | epsilon
-
-boolean suite_nombre(){
-    if(SYM_COUR.CODE == PT_TOKEN){
-        nextToken();
-        if(SYM_COUR.CODE == NUM_TOKEN)
-            return true;
-        else
-            return false;
-    }
-    else{
-        follow_token = true;
-        return true;
-    }
-}
 
 // integer_type_definition -> range T_NUMERIC .. T_NUMERIC | mode expression
 
