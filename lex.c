@@ -123,8 +123,8 @@ int is_underscore(){
     return Car_Cour =='_';
 }
 int isAccentLettre(){
-    // if(-128<Car_Cour && Car_Cour <= -102){ // FROM Ç TO Ü
-    if(-96<= Car_Cour && Car_Cour <= -61 ){ //éèçàùûâêîô
+    // if(-128<Car_Cour && Car_Cour <= -102){ // FROM Ã‡ TO Ãœ
+    if(-96<= Car_Cour && Car_Cour <= -61 ){ //Ã©Ã¨Ã§Ã Ã¹Ã»Ã¢ÃªÃ®Ã´
         return 1;
     }
     return 0;
@@ -141,7 +141,7 @@ void lire_mot(){
         lire_Car();
     }
 
-    if ( isAccentLettre() ) { //é à ...
+    if ( isAccentLettre() ) { //Ã© Ã  ...
         while (isalpha(Car_Cour) || isdigit(Car_Cour) || isAccentLettre() || is_underscore()) {
             SYM_COUR.NOM[lonLex++] = Car_Cour;
             lire_Car();
@@ -181,20 +181,7 @@ void lire_nombre(){
         lire_Car();
     }
 
-    if ( Car_Cour == '.') { // on switch vers la lecture d'un float
-        SYM_COUR.NOM[lonLex++] = Car_Cour;
-        lire_Car();
-        if ( !isdigit(Car_Cour) ) {
-            ungetc(Car_Cour, fl);
-            SYM_COUR.NOM[lonLex - 1] = '\0';
-        }
-        else{
-            while( isdigit(Car_Cour) ){
-                SYM_COUR.NOM[lonLex++] = Car_Cour;
-                lire_Car();
-            }
-        }
-    }
+   
 
     if ( isalpha(Car_Cour) || isAccentLettre() || is_underscore() ) { // identificateur qui commence par des digits
         while ( isalnum(Car_Cour) || isAccentLettre() || is_underscore() ) {
