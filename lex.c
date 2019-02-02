@@ -5,19 +5,19 @@
 #include "lex.h"
 
 
-int main(int argc, char* argv[]){
-    if (!argv[1]) {
-        printf("fichier n'exste pas\n");
-        exit(EXIT_FAILURE);
-    }
-    fl = fopen(argv[1], "r");
-    while(Car_Cour != EOF){
-        nextToken();
-    }
-
-    fclose(fl);
-    return 0;
-}
+//int main(int argc, char* argv[]){
+//    if (!argv[1]) {
+//        printf("fichier n'exste pas\n");
+//        exit(EXIT_FAILURE);
+//    }
+//    fl = fopen(argv[1], "r");
+//    while(Car_Cour != EOF){
+//        nextToken();
+//    }
+//
+//    fclose(fl);
+//    return 0;
+//}
 
 
 void showCodeToken(Token token){
