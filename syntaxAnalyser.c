@@ -39,6 +39,28 @@ boolean null_statement();
 boolean lire_number();
 boolean exit_statement();
 boolean goto_statement();
+boolean object_number_declaration();
+boolean sequence_statement();
+boolean statement();
+boolean simple_statement();
+boolean null_statement();
+boolean exit_statement();
+boolean goto_statement();
+boolean procedure_call_or_assign_statement();
+boolean params();
+boolean return_statement();
+boolean compound_statement();
+boolean if_statement();
+boolean case_statement();
+boolean case_statement_alt();
+boolean loop_statement();
+boolean block_statement();
+boolean expression();
+boolean relation();
+boolean simple_expression();
+boolean term ();
+boolean factor();
+boolean primary();
 
 int main(int argc, char* argv[]){
   /**  if (!argv[1]) {
@@ -384,7 +406,7 @@ boolean subprogram_body(){
     return result;
 }
 
-//1_1 - program -> list_with_use_clause subprogram_body 
+//1_1 - program -> list_with_use_clause subprogram_body
 // VV
 boolean program(){
     boolean result = FALSE;
@@ -417,7 +439,7 @@ boolean integer_type_definition(){
             }
         }
     }
-    else if(SYM_COUR.CODE == MODE_TOKEN){
+    else if(SYM_COUR.CODE == MOD_TOKEN){
         nextToken();
             if(expression())
                 result = TRUE;
@@ -490,20 +512,20 @@ boolean array_type_definition(){
                             return false;
                     }
                     else
-                        return false; 
+                        return false;
                 }
                 if(SYM_COUR.CODE == PF_TOKEN){
                     nextToken();
                     if(SYM_COUR.CODE == OF_TOKEN){
                         nextToken();
                         if(SYM_COUR.CODE == ID_TOKEN)
-                            result = true;
+                            return TRUE;
                     }
                 }
             }
         }
     }
-    return result;
+    return FALSE;
 }
 
 //record_type_definition -> null record; | record component_list end record
@@ -561,7 +583,7 @@ boolean component_item(){
                 nextToken();
                 if(SYM_COUR.CODE == AFF_TOKEN){
                     nextToken();
-                    if(expression)
+                    if(expression())
                         return true;
                 }
                 else{
@@ -592,10 +614,10 @@ boolean object_number_declaration(){
                 if(SYM_COUR.CODE == AFF_TOKEN){
                     nextToken();
                     if(expression()){
-                        nextToken()   
+                        nextToken();
                         if(SYM_COUR.CODE == PV_TOKEN)
                             return true;
-                    }                   
+                    }
                 }
             }
         }
@@ -620,7 +642,7 @@ boolean sequence_statement(){
 boolean statement(){
     if(SYM_COUR.CODE == IF_TOKEN || SYM_COUR.CODE == CASE_TOKEN || SYM_COUR.CODE == WHILE_TOKEN ||
         SYM_COUR.CODE == LOOP_TOKEN || SYM_COUR.CODE == DECLARE_TOKEN || SYM_COUR.CODE == BEGIN_TOKEN){
-        return compound_statement();       
+        return compound_statement();
     }
     return simple_statement();
 }
@@ -734,7 +756,7 @@ boolean procedure_call_or_assign_statement(){
                     }
                 }
             }
-        } 
+        }
     }
     return false;
 }
@@ -771,11 +793,11 @@ boolean params(){
 
 boolean return_statement(){
     if(SYM_COUR.CODE == RETURN_TOKEN){
-        next_token();
+        nextToken();
         if(SYM_COUR.CODE == PV_TOKEN)
             return true;
         if(expression()){
-            next_token();
+            nextToken();
             if(SYM_COUR.CODE == PV_TOKEN)
                 return true;
         }
@@ -854,7 +876,6 @@ boolean if_statement(){
 }
 
 
-
 // 28 - case_statement -> case expression is case_statement_alt {case_statement_alt}* end case;
 
 boolean case_statement(){
@@ -902,15 +923,17 @@ boolean case_statement_alt(){
                             return TRUE;
                 }
             }
-            // TODO Others 
+            // TODO Others
         }
     }
-    return FALSE;
+
+  }
+   return FALSE;
 }
 
-// 30 -  loop_statement -> [(while expression 
-//                              | 
-//                          for id in [reverse] simple_expression .. simple_expression)] 
+// 30 -  loop_statement -> [(while expression
+//                              |
+//                          for id in [reverse] simple_expression .. simple_expression)]
 //      loop sequence_statement end loop;
 
 boolean loop_statement(){
@@ -1014,7 +1037,7 @@ boolean expression(){
 }
 
 // 33 - relation -> simple_expression [     (= | =* | =/ | < | <= | > |>= )  simple_expression
-//                                      | 
+//                                      |
                     //                      (not | in) NUM_TOKEN .. NUM_TOKEN
 //                                    ]
 boolean relation(){
@@ -1045,7 +1068,7 @@ boolean relation(){
 
 
 // 34 - simple_expression -> [+ | -] term { (+ | - | &) term }*
-boolean simple_expression{
+boolean simple_expression(){
     if ( SYM_COUR.CODE == PLUS_TOKEN || SYM_COUR.CODE == MOINS_TOKEN ){
         nextToken();
     }
@@ -1069,7 +1092,7 @@ boolean term(){
         while( SYM_COUR.CODE == MULT_TOKEN || SYM_COUR.CODE == DIV_TOKEN || SYM_COUR.CODE == MOD_TOKEN){
             nextToken();
             if( !factor()) return false;
-            nextToken();            
+            nextToken();
         }
         follow_token = true;
         return true;
