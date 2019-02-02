@@ -49,9 +49,9 @@ int main(int argc, char* argv[]){
 }
 
 
-// integer_type_definition -> range T_NUMERIC .. T_NUMERIC | mode expression
+// integer_type_definition -> range T_NUMERIC .. T_NUMERIC | mod expression
 
-// enumeration_type_definition ->'(' (id|char) [ , (id|char)]*  ')'
+// 9 - enumeration_type_definition ->'(' (id|char) [ , (id|char)]*  ')'
 
 boolean enumeration_type_definition(){
     if(SYM_COUR.CODE == PO_TOKEN){
@@ -71,7 +71,7 @@ boolean enumeration_type_definition(){
     return false;
 }
 
-//multiple_id -> .id multiple_id | epsilon
+//2_2 - multiple_id -> .id multiple_id | epsilon
 //FIRST = (.);
 //FOLLOW = USE ID PROCEDURE FUNCTION
 
@@ -96,7 +96,7 @@ boolean multiple_id(){
     return result;
 }
 
-//with_use_clause -> (use | with) id multiple_id
+//2_1 with_use_clause -> (use | with) id multiple_id
 
 boolean with_use_clause(){
     boolean result = FALSE;
@@ -114,10 +114,10 @@ boolean with_use_clause(){
 	return result;
 }
 
-//list_with_use_clause -> with_use_clause list_with_use_clause | epsilon
+//1_2 - list_with_use_clause -> with_use_clause list_with_use_clause | epsilon
 //FIRST = (use, with)
 //FOLLOW = (procedure, function)
-
+//VV
 boolean list_with_use_clause(){
     boolean result = FALSE;
     if (SYM_COUR.CODE == PROCEDURE_TOKEN ||
@@ -134,7 +134,8 @@ boolean list_with_use_clause(){
     return result;
 }
 
-//subprogram_specification -> procedure id ['(' formal_part ')'] | function id ['(' formal_part ')'] return id
+
+//4 - subprogram_specification -> procedure id ['(' formal_part ')'] | function id ['(' formal_part ')'] return id
 
 boolean subprogram_specification(){
     boolean result = false;
@@ -166,24 +167,24 @@ boolean subprogram_specification(){
                 }
             }
         }
-        else{
-            if(SYM_COUR.CODE == PROCEDURE_TOKEN){
+    }
+    else{
+        if(SYM_COUR.CODE == PROCEDURE_TOKEN){
+            nextToken();
+            if(SYM_COUR.CODE == ID_TOKEN){
                 nextToken();
-                if(SYM_COUR.CODE == ID_TOKEN){
+                if(SYM_COUR.CODE == PO_TOKEN){
                     nextToken();
-                    if(SYM_COUR.CODE == PO_TOKEN){
+                    if(formal_part()){
                         nextToken();
-                        if(formal_part()){
-                            nextToken();
-                            if(SYM_COUR.CODE == PF_TOKEN){
-                                result = true;
-                            }
+                        if(SYM_COUR.CODE == PF_TOKEN){
+                            result = true;
                         }
                     }
-                    else{
-                        result = true;
-                        follow_token = true;
-                    }
+                }
+                else{
+                    result = true;
+                    follow_token = true;
                 }
             }
         }
@@ -191,7 +192,7 @@ boolean subprogram_specification(){
     return result;
 }
 
-//type_declaration -> type id is (enumeration_type_definition | integer_type_definition | real_type_definition | array_type_definition);
+//8 - type_declaration -> type id is (enumeration_type_definition | integer_type_definition | real_type_definition | array_type_definition);
 
 boolean type_declaration(){
     if(SYM_COUR.CODE == TYPE_TOKEN){
@@ -202,22 +203,38 @@ boolean type_declaration(){
                 nextToken();
                 if(SYM_COUR.CODE == PO_TOKEN){
                     if(enumeration_type_definition()){
-                        return true;
+                        nextToken();
+                        if(SYM_COUR.CODE == PV_TOKEN)
+                            return true;
+                        else
+                            return false;
                     }
                 }
                 if(SYM_COUR.CODE == RANGE_TOKEN){
                     if(integer_type_definition()){
-                        return true;
+                        nextToken();
+                        if(SYM_COUR.CODE == PV_TOKEN)
+                            return true;
+                        else
+                            return false;
                     }
                 }
                 if(SYM_COUR.CODE == DIGITS_TOKEN){
                     if(real_type_definition()){
-                        return true;
+                        nextToken();
+                        if(SYM_COUR.CODE == PV_TOKEN)
+                            return true;
+                        else
+                            return false;
                     }
                 }
                 if(SYM_COUR.CODE == ARRAY_TOKEN){
                     if(array_type_definition()){
-                        return true;
+                        nextToken();
+                        if(SYM_COUR.CODE == PV_TOKEN)
+                            return true;
+                        else
+                            return false;
                     }
                 }
             }
@@ -226,7 +243,7 @@ boolean type_declaration(){
     return false;
 }
 
-// -> id : [in | out] id [:= expression]
+// 6 - parameter_specification -> id : [in | out] id [:= expression]
 
 boolean parameter_specification(){
     if(SYM_COUR.CODE == ID_TOKEN){
@@ -255,8 +272,7 @@ boolean parameter_specification(){
     }
     return false;
 }
-
-// other_-> , other_| epsilon
+// 5_2 other_parameter_specification -> , parameter_specification other_parameter_specification | epsilon
 //FOLLOW )
 
 boolean other_parameter_specification(){
@@ -275,7 +291,7 @@ boolean other_parameter_specification(){
 
 }
 
-//formal_part -> other_parameter_specification
+//5_1 - formal_part -> parameter_specification other_parameter_specification
 
 boolean formal_part(){
     if(parameter_specification()){
@@ -288,7 +304,7 @@ boolean formal_part(){
 }
 
 
-// basic_declaration -> type_declaration | object_number_declaration
+// 8 - basic_declaration -> type_declaration | object_number_declaration
 
 boolean basic_declaration(){
     boolean result = false;
@@ -305,7 +321,7 @@ boolean basic_declaration(){
     return result;
 }
 
-// list_basic_declaration -> basic_declaration list_basic_declaration | epsilon
+// 3_2 list_basic_declaration -> basic_declaration list_basic_declaration | epsilon
 //FIRST = type, id
 //FOLLOW = begin
 
@@ -325,7 +341,7 @@ boolean list_basic_declaration(){
 }
 
 
-// subprogram_body -> subprogram_specification is list_basic_declaration begin sequence_statement end [id];
+// 3_1 subprogram_body -> subprogram_specification is list_basic_declaration begin sequence_statement end [id];
 
 boolean subprogram_body(){
     boolean result = false;
@@ -360,8 +376,8 @@ boolean subprogram_body(){
     return result;
 }
 
-//program -> list_with_use_clause subprogram_body
-
+//1_1 - program -> list_with_use_clause subprogram_body 
+// VV
 boolean program(){
     boolean result = FALSE;
     if(list_with_use_clause()){
@@ -374,27 +390,26 @@ boolean program(){
 	return result;
 }
 
-//integer_type_definition -> range T_NUMERIC .. T_NUMERIC | mode expression
+//10 - integer_type_definition -> range expression .. expression | mod expression
 
 boolean integer_type_definition(){
     boolean result = FALSE;
     if(SYM_COUR.CODE == RANGE_TOKEN){
         nextToken();
-        if(SYM_COUR.CODE == NUM_TOKEN){
+        if(expression()){
             nextToken();
             if(SYM_COUR.CODE == PT_TOKEN){
                 nextToken();
                 if(SYM_COUR.CODE == PT_TOKEN){
                     nextToken();
-                    if(SYM_COUR.CODE == NUM_TOKEN){
+                    if(expression()){
                         result = TRUE;
                     }
                 }
             }
         }
     }
-    else if(SYM_COUR.CODE == ID_TOKEN){
-        // TODO check if mode is MODE_TOKEN or ID_TOKEN
+    else if(SYM_COUR.CODE == MODE_TOKEN){
         nextToken();
             if(expression())
                 result = TRUE;
@@ -403,69 +418,40 @@ boolean integer_type_definition(){
 }
 
 
-//real_type_definition -> digit T_NUMERIC [range T_NUMERIC .. T_NUMERIC](1-D array) 
+//11 - real_type_definition -> digit expression [range expression .. expression]
 
 boolean real_type_definition(){
-    boolean result = FALSE;
     if(SYM_COUR.CODE == DIGITS_TOKEN){
         nextToken();
-        if(SYM_COUR.CODE == NUM_TOKEN){
+        if(expression()){
             nextToken();
             if(SYM_COUR.CODE == RANGE_TOKEN){
                 nextToken();
-                if(SYM_COUR.CODE == NUM_TOKEN){
+                if(expression()){
                     nextToken();
                     if(SYM_COUR.CODE == PT_TOKEN){
                         nextToken();
                         if(SYM_COUR.CODE == PT_TOKEN){
                             nextToken();
-                            if(SYM_COUR.CODE == NUM_TOKEN){
-                                nextToken();
-                            }
-                            else
-                                return result;
-                        }
-                        else{
-                            return result;
-                        }
-                    }
-                    else{
-                        return result;
-                    }
-                }
-                else{
-                    return result;
-                }
-            }
-            if(SYM_COUR.CODE == PO_TOKEN){
-                // TODO semantic check if num_token == 1
-                nextToken();
-                if(SYM_COUR.CODE == NUM_TOKEN){
-                    nextToken();
-                    if(SYM_COUR.CODE == MOINS_TOKEN){
-                        nextToken();
-                        //TODO semantic check if ID_TOKEN == D
-                        if(SYM_COUR.CODE == ID_TOKEN){
-                            nextToken();
-                            if(SYM_COUR.CODE == ARRAY_TOKEN){
-                                nextToken();
-                                if(SYM_COUR.CODE == PF_TOKEN){
-                                    result = true;
-                                }
+                            if(expression()){
+                                return true;
                             }
                         }
                     }
                 }
             }
-        }   
+            else{
+                follow_token = true;
+                return true;
+            }
+        }
     }
-    return result;
+    return false;
 }
 
-//array_type_definition ->array '(' id [range (<> | T_NUMERIC .. T_NUMERIC)] ')' of id
+//12 - array_type_definition -> array '(' id [range (<> | T_NUMERIC .. T_NUMERIC)] ')' of id
 
 boolean array_type_definition(){
-    boolean result = false;
     if(SYM_COUR.CODE == ARRAY_TOKEN){
         nextToken();
         if(SYM_COUR.CODE == PO_TOKEN){
@@ -477,26 +463,26 @@ boolean array_type_definition(){
                     if(SYM_COUR.CODE == DIFF_TOKEN){
                         nextToken();
                     }
-                    else if(SYM_COUR.CODE == NUM_TOKEN){
+                    else if(expression()){
                         nextToken();
                         if(SYM_COUR.CODE == PT_TOKEN){
                             nextToken();
                             if(SYM_COUR.CODE == PT_TOKEN){
                                 nextToken();
-                                if(SYM_COUR.CODE == NUM_TOKEN){
+                                if(expression()){
                                     nextToken();
                                 }
                                 else
-                                    return result;
+                                    return false;
                             }
                             else
-                                return result;
+                                return false;
                         }
                         else
-                            return result;
+                            return false;
                     }
                     else
-                        return result; 
+                        return false; 
                 }
                 if(SYM_COUR.CODE == PF_TOKEN){
                     nextToken();
@@ -506,7 +492,6 @@ boolean array_type_definition(){
                             result = true;
                     }
                 }
-
             }
         }
     }
@@ -515,13 +500,12 @@ boolean array_type_definition(){
 
 //record_type_definition -> null record; | record component_list end record
 boolean record_type_definition(){
-    boolean result = FALSE;
     if(SYM_COUR.CODE == NULL_TOKEN){
         nextToken();
         if(SYM_COUR.CODE == RECORD_TOKEN){
             nextToken();
             if(SYM_COUR.CODE == PV_TOKEN){
-                result = true;
+                return true;
             }
         }
     }
@@ -533,36 +517,34 @@ boolean record_type_definition(){
                 if(SYM_COUR.CODE == END_TOKEN){
                     nextToken();
                     if(SYM_COUR.CODE == RECORD_TOKEN){
-                        result = true;
+                        return true;
                     }
                 }
             }
         }
     }
-    return result;
+    return false;
 }
-// component_list -> component_item [component_item]* | null ;
+// 14 - component_list -> component_item [component_item]* | null ;
 boolean component_list(){
-    boolean result=FALSE;
     if(component_item()){
-        do{
+        nextToken();
+        while(component_item()){
             nextToken();
-        }while(SYM_COUR.CODE == component_item());
-        result = TRUE;
+        }
+        follow_token = true;
+        return true;
     }
     else{
         if(SYM_COUR.CODE == NULL_TOKEN){
-            nextToken()
-            if(SYM_COUR.CODE == PV_TOKEN)
-                result = TRUE;
+            return true;
         }
     }
-    return result;
+    return false;
 }
 
-//component_item -> id : id [:= expression]
+//15 - component_item -> id : id [:= expression]
 boolean component_item(){
-    boolean result = FALSE;
     if(SYM_COUR.CODE == ID_TOKEN){
         nextToken();
         if(SYM_COUR.CODE == DOUBLE_POINT_TOKEN){
@@ -572,98 +554,143 @@ boolean component_item(){
                 if(SYM_COUR.CODE == AFF_TOKEN){
                     nextToken();
                     if(expression)
-                        result = TRUE;
+                        return true;
                 }
                 else{
-                    result = TRUE;
+                    follow_token = true;
+                    return true;
                 }
             }
         }
     }
-    return result;
+    return false;
 }
 
-//object_number_declaration -> id : (constant | id ) := expression
+//16 - object_number_declaration -> id [,id]* : constant := expression;
 boolean object_number_declaration(){
-    boolean result = FALSE;
     if(SYM_COUR.CODE == ID_TOKEN){
         nextToken();
+        while(SYM_COUR.CODE == VIR_TOKEN){
+            nextToken();
+            if(!SYM_COUR.CODE == VIR_TOKEN){
+                return false;
+            }
+            nextToken();
+        }
         if(SYM_COUR.CODE == DOUBLE_POINT_TOKEN){
             nextToken();
-            //TODO semanticcheck if ID_TOKEN is CONSTANT_TOKEN
-            if(SYM_COUR.CODE == ID_TOKEN ||  SYM_COUR.CODE == CONSTANT_TOKEN){
+            if(SYM_COUR.CODE == CONSTANT_TOKEN){
                 nextToken();
                 if(SYM_COUR.CODE == AFF_TOKEN){
                     nextToken();
                     if(expression()){
                         nextToken()   
                         if(SYM_COUR.CODE == PV_TOKEN)
-                            result = TRUE;
+                            return true;
                     }                   
                 }
             }
         }
     }
-    return result;
+    return false;
 }
 
-// sequence_statement -> statement {statement}*
+// 17 - sequence_statement -> statement {statement}*
 boolean sequence_statement(){
-    boolean result = FALSE;
     if(statement()){
-        do{
+        nextToken();
+        while(statement()){
             nextToken();
-        }while(statement());
-        result = TRUE;
+        }
+        follow_token = TRUE;
+        return true;
     }
-    return result;
+    return false;
 }
 
-//statement -> simple_statement | compound_statement
+//18 - statement -> simple_statement | compound_statement
 boolean statement(){
-    return (simple_statement() || compound_statement())
-
+    if(SYM_COUR.CODE == IF_TOKEN || SYM_COUR.CODE == CASE_TOKEN || SYM_COUR.CODE == WHILE_TOKEN ||
+        SYM_COUR.CODE == LOOP_TOKEN || SYM_COUR.CODE == DECLARE_TOKEN || SYM_COUR.CODE == BEGIN_TOKEN){
+        return compound_statement();       
+    }
+    return simple_statement();
 }
 
-//simple_statement ::= null_statement | procedure_call_or_assign_statement | exit_statement | goto_statement | return_statement
+//19 - simple_statement ::= null_statement | procedure_call_or_assign_statement | exit_statement | goto_statement | return_statement
 
 boolean simple_statement(){
-    return (null_statement() || procedure_call_or_assign_statement() || exit_statement() || goto_statement() || return_statement());
+    //null_statement
+    if(SYM_COUR.CODE == NULL_TOKEN){
+        return true;
+    }
+    //procedure_call_or_assign_statement
+    if(SYM_COUR.CODE == ID_TOKEN){
+        return procedure_call_or_assign_statement();
+    }
+    //exit_statement
+    if(SYM_COUR.CODE == EXIT_TOKEN){
+        return exit_statement();
+    }
+    //goto_statement
+    if(SYM_COUR.CODE == GOTO_TOKEN){
+        return goto_statement();
+    }
+    //return
+    if(SYM_COUR.CODE == RETURN_TOKEN){
+        return return_statement();
+    }
+    return false;
 }
 
-//null_statement -> null ;
+//20 - null_statement -> null ;
 boolean null_statement(){
-    boolean result = FALSE;
     if(SYM_COUR.CODE == NULL_TOKEN){
         nextToken();
         if(SYM_COUR.CODE == PV_TOKEN)
-            result = TRUE;
+            return TRUE;
     }
-    return result;
+    return FALSE;
 }
 
-//exit_statement -> exit [id] [when expression];
+//21 - exit_statement -> exit [id] [when expression];
 boolean exit_statement(){
-    boolean result = false;;
     if(SYM_COUR.CODE == EXIT_TOKEN){
         nextToken();
         if(SYM_COUR.CODE == ID_TOKEN){
-            result = TRUE;
+            nextToken();
+            if(SYM_COUR.CODE == WHEN_TOKEN){
+                nextToken();
+                if(expression()){
+                    nextToken();
+                    if(SYM_COUR.CODE == PV_TOKEN){
+                        return true;
+                    }
+                }
+            }
+            else{
+                if(SYM_COUR.CODE == PV_TOKEN){
+                        return true;
+                }
+            }
         }
         else if(SYM_COUR.CODE == WHEN_TOKEN){
                 nextToken();
-                if(expression())
-                    result = true;
-                else
-                    result = FALSE;
+                if(expression()){
+                    nextToken();
+                    if(SYM_COUR.CODE == PV_TOKEN){
+                        return true;
+                    }
+                }
+            }
+        else if(SYM_COUR.CODE == PV_TOKEN){
+                        return true;
         }
-        else
-            result = TRUE;
     }
-    return result;
+    return false;
 }
 
-//goto_statement -> goto id;
+//21 - goto_statement -> goto id;
 boolean goto_statement(){
     if(SYM_COUR.CODE == GOTO_TOKEN){
         nextToken();
