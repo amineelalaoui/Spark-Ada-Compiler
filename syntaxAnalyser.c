@@ -854,6 +854,115 @@ boolean if_statement(){
 }
 
 
+
+// 28 - case_statement -> case expression is case_statement_alt {case_statement_alt}* end case;
+
+boolean case_statement(){
+    if(SYM_COUR.CODE == CASE_TOKEN) {
+        nextToken();
+        if(expression()){
+            nextToken();
+            if(SYM_COUR.CODE = IS_TOKEN){
+                nextToken();
+                if(case_statement_alt()){
+                    do{
+                        nextToken();
+                    }while(case_statement_alt());
+                    if(SYM_COUR.CODE == END_TOKEN){
+                        nextToken();
+                        if(SYM_COUR.CODE == CASE_TOKEN)
+                        return TRUE;
+                    }
+                }
+            }
+        }
+    }
+    return FALSE;
+}
+
+// 29 - case_statement_alt -> when (simple_expression | others) => sequence_statement
+
+boolean case_statement_alt(){
+    if(SYM_COUR.CODE == WHEN_TOKEN){
+        nextToken();
+        if(SYM_COUR.CODE == PLUS_TOKEN || SYM_COUR.CODE == MOINS_TOKEN || SYM_COUR.CODE == NULL_TOKEN || SYM_COUR.CODE == STRING_TOKEN || SYM_COUR.CODE == ID_TOKEN || SYM_COUR.CODE == NUM_TOKEN || SYM_COUR.CODE == PO_TOKEN){
+            if(simple_expression()){
+                nextToken();
+                if(SYM_COUR.CODE == AFF_TOKEN){
+                    nextToken();
+                    if(sequence_statement())
+                        return TRUE;
+                }
+            }
+            // TODO Others 
+        }
+    }
+    return FALSE;
+}
+
+// 30 -  loop_statement -> [(while expression | for id in [reverse] simple_expression .. simple_expression)] loop sequence_statement end loop;
+
+boolean loop_statement(){
+    if(SYM_COUR.CODE == WHILE_TOKEN){
+        nextToken();
+        if(!expression())
+            return FALSE;
+    }
+    else if(SYM_COUR.CODE == FOR_TOKEN){
+        nextToken();
+        if(SYM_COUR.CODE == ID_TOKEN){
+            nextToken();
+            if(SYM_COUR.CODE == IN_TOKEN){
+                nextToken();
+                if(SYM_COUR.CODE == REVERSE_TOKEN){
+                    nextToken();
+                    if(simple_expression()){
+                        nextToken();
+                        if(SYM_COUR.CODE == PT_TOKEN){
+                            nextToken();
+                            if(SYM_COUR.CODE == PT_TOKEN){
+                                nextToken();
+                                if(!simple_expression())
+                                    return FALSE;
+                            }
+                            else
+                                return FALSE;
+                        }
+                        else
+                            return FALSE;
+                    }
+                    else
+                        return FALSE;
+                }
+                else
+                    return FALSE;
+            }
+            else
+                return FALSE;
+        }
+        else
+            return FALSE;
+    }
+    nextToken();
+    if(SYM_COUR.CODE == LOOP_TOKEN){
+        nextToken();
+        if(sequence_statement()){
+            nextToken();
+            if(SYM_COUR.CODE == END_TOKEN){
+                nextToken();
+                if(SYM_COUR.CODE == LOOP_TOKEN){
+                    nextToken();
+                    if(SYM_COUR.CODE == PV_TOKEN)
+                        return TRUE;
+                }
+            }
+        }
+    }
+    return FALSE;
+}
+
+
+
 //31 - block_statement -> [declare (basic_declaration)*]
 //                   begin
 //                      sequence_statement
