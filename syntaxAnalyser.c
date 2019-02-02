@@ -4,6 +4,14 @@
 #include <ctype.h>
 #include "lex.h"
 
+/**
+*
+* @author : Mohamed Amine EL ALAOUI
+* @author : KHALIL Idriss
+* @author : MEFTAHI Abderrahman
+* @author : LAATAATA Abderrazak
+**/
+
 boolean list_with_use_clause();
 boolean enumeration_type_definition();
 boolean multiple_id();
@@ -699,3 +707,247 @@ boolean goto_statement(){
     }
     return FALSE;
 }
+
+//  procedure_call_or_assign_statement-> id ('(' params ')' | := expression) ;
+boolean procedure_call_or_assign_statement(){
+    boolean result = FALSE;
+    if(SYM_COUR.CODE == ID_TOKEN){
+        nextToken();
+        if(SYM_COUR.CODE == PO_TOKEN){
+            nextToken();
+            if(params()){
+                nextToken();
+                if(SYM_COUR.CODE == PF_TOKEN){
+                    nextToken();
+                    if(SYM_COUR.CODE == PV_TOKEN)
+                        result = TRUE;
+                }
+            }
+        }
+        else{
+            //affectation
+            if(SYM_COUR.CODE == AFF_TOKEN){
+                nextToken();
+                if(expression()){
+                    nextToken();
+                    if(SYM_COUR.CODE == PV_TOKEN){
+                        result = false;
+                    }
+                }
+            }
+        } 
+    }
+    return result;
+}
+
+// params -> [id =>] expression {, params}*
+boolean params(){
+    boolean result = FALSE;
+    boolean isEpsilon = FALSE;
+    follow_token = FALSE;
+    if(SYM_COUR.CODE == ID_TOKEN){
+        nextToken();
+        if(SYM_COUR.CODE == EGAL_TOKEN ){
+            nextToken();
+            if(SYM_COUR.CODE == SUP_TOKEN ){
+                nextToken();
+                if(expression()){
+                    // TODO ADD AO_TOKEN in lex.h an lex.c
+                    while(isEpsilon == FALSE){
+                        nextToken();
+                        if(SYM_COUR.CODE == AO_TOKEN){
+                            nextToken();
+                            if(SYM_COUR.CODE == VIR_TOKEN){
+                                nextToken();
+                                if(params()){
+                                    nextToken();
+                                    if(SYM_COUR.CODE == AF_TOKEN)
+                                        continue;
+                                }
+                                else{
+                                    //syntax error
+                                    follow_token = FALSE;
+                                    isEpsilon = TRUE;
+                                    result = FALSE;
+                                }
+                            }
+                            else{
+                                //syntax error
+                                follow_token = FALSE;
+                                isEpsilon = TRUE;
+                                result = FALSE;
+                            }
+                        }
+                        else{
+                                //epsilon
+                                follow_token = TRUE;
+                                isEpsilon = TRUE;
+                                result = TRUE;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    else{
+        // if [id =>] is missing
+        if(expression()){
+            // TODO ADD AO_TOKEN in lex.h an lex.c
+            while(isEpsilon == FALSE){
+                nextToken();
+                if(SYM_COUR.CODE == AO_TOKEN){
+                    nextToken();
+                    if(SYM_COUR.CODE == VIR_TOKEN){
+                        nextToken();
+                        if(params()){
+                            nextToken();
+                            if(SYM_COUR.CODE == AF_TOKEN)
+                                continue;
+                        }
+                        else{
+                            //syntax error
+                            follow_token = FALSE;
+                            isEpsilon = TRUE;
+                            result = FALSE;
+                        }
+                    }
+                    else{
+                        //syntax error
+                        follow_token = FALSE;
+                        isEpsilon = TRUE;
+                        result = FALSE;
+                    }
+                }
+                else{
+                        //epsilon
+                        follow_token = TRUE;
+                        isEpsilon = TRUE;
+                        result = TRUE;
+                }
+            }
+        }
+
+    }
+    return result;
+}
+
+//return_statement -> return [expression] ;
+
+boolean return_statement(){
+    boolean result = FALSE;
+    if(SYM_COUR.CODE == RETURN_TOKEN){
+        next_token();
+        if(expression())
+            result = FALSE;
+        else{
+            follow_token = TRUE;
+            result = TRUE;
+        }
+    }
+    return result;
+}
+
+//compound_statement ::= if_statement | case_statement | loop_statement | block_statement
+
+boolean compound_statement(){
+    if(SYM_COUR.CODE == IF_TOKEN){
+        follow_token = TRUE;
+        return if_statement();
+    }
+    else if(SYM_COUR.CODE == CASE_TOKEN){
+        follow_token = TRUE;
+        return case_statement();
+    }
+    else if(SYM_COUR.CODE == WHILE_TOKEN || SYM_COUR.CODE == FOR_TOKEN || SYM_COUR.CODE == LOOP_TOKEN){
+        follow_token = TRUE;
+        return loop_statement();
+    }
+    else if(SYM_COUR.CODE == DECLARE_TOKEN || SYM_COUR.CODE == BEGIN_TOKEN ){
+        follow_token = TRUE;
+        return block_statement();
+    }
+    return FALSE;
+}
+
+// if_statement -> if expression then sequence_statement [elsif expression then sequence_statement]* [else sequence_statement] end if;
+
+boolean if_statement(){
+    boolean isEpsilon = FALSE;
+    if(SYM_COUR.CODE == IF_TOKEN){
+        nextToken();
+        if(expression()){
+            nextToken();
+            if(SYM_COUR.CODE == THEN_TOKEN){
+                nextToken();
+                if(sequence_statement()){
+                    while(isEpsilon == FALSE){
+                        nextToken();
+                        if(SYM_COUR.CODE == ELSIF_TOKEN){
+                            nextToken();
+                            if(expression()){
+                                nextToken();
+                                if(SYM_COUR.CODE == THEN_TOKEN){
+                                    nextToken();
+                                    if(sequence_statement())
+                                        continue;
+                                    else
+                                        return FALSE;
+            
+                                }
+                                else
+                                    return FALSE;
+                            }
+                            else
+                                return FALSE;
+                        }
+                        else{
+                            isEpsilon = TRUE;
+                        }
+                    }
+                    //SYM_COUR contains already the follow token. so, no need to call nextToken
+                    if(SYM_COUR.CODE == ELSE_TOKEN){
+                        nextToken();
+                        if(sequence_statement()){
+                            nextToken();
+                            if(SYM_COUR.CODE == END_TOKEN){
+                                nextToken();
+                                if(SYM_COUR.CODE == IF_TOKEN){
+                                    nextToken();
+                                    if(SYM_COUR.CODE == PV_TOKEN)
+                                        return TRUE;
+                                }
+                                else
+                                    return TRUE;
+                            }
+                            else
+                                return FALSE;
+                        }
+                        else
+                            return FALSE;
+                    }
+                    else{
+                        if(SYM_COUR.CODE == END_TOKEN){
+                                nextToken();
+                                if(SYM_COUR.CODE == IF_TOKEN){
+                                    nextToken();
+                                    if(SYM_COUR.CODE == PV_TOKEN)
+                                        return TRUE;
+                                }
+                                else
+                                    return TRUE;
+                            }
+                            else
+                                return FALSE;
+                    }
+
+                    
+                }
+            }
+        }
+    }
+    return FALSE;
+}
+
+// case_statement -> case expression is case_statement_alt {case_statement_alt}* end case;
+
+
