@@ -28,6 +28,7 @@ boolean sequence_statement();
 boolean statement();
 boolean simple_statement();
 boolean null_statement();
+boolean lire_number();
 boolean exit_statement();
 boolean goto_statement();
 
@@ -45,6 +46,33 @@ int main(int argc, char* argv[]){
         printf("NOOO\n");
     fclose(fl);
     return 0;
+}
+
+// nombre -> NUMBER suite_nombre
+
+boolean nombre(){
+    if(SYM_COUR.CODE == NUM_TOKEN){
+        nextToken();
+        if(suite_nombre())
+            return true;
+    }
+    return false;
+}
+
+// suite_nombre -> . NUMBER | epsilon
+
+boolean suite_nombre(){
+    if(SYM_COUR.CODE == PT_TOKEN){
+        nextToken();
+        if(SYM_COUR.CODE == NUM_TOKEN)
+            return true;
+        else
+            return false;
+    }
+    else{
+        follow_token = true;
+        return true;
+    }
 }
 
 // integer_type_definition -> range T_NUMERIC .. T_NUMERIC | mode expression
@@ -377,13 +405,13 @@ boolean program(){
 boolean integer_type_definition(){
     boolean result = FALSE;
     if(SYM_COUR.CODE == RANGE_TOKEN){
-        next_token();
+        nextToken();
         if(SYM_COUR.CODE == NUM_TOKEN){
-            next_token();
+            nextToken();
             if(SYM_COUR.CODE == PT_TOKEN){
-                next_token();
+                nextToken();
                 if(SYM_COUR.CODE == PT_TOKEN){
-                    next_token();
+                    nextToken();
                     if(SYM_COUR.CODE == NUM_TOKEN){
                         result = TRUE;
                     }
@@ -393,7 +421,7 @@ boolean integer_type_definition(){
     }
     else if(SYM_COUR.CODE == ID_TOKEN){
         // TODO check if mode is MODE_TOKEN or ID_TOKEN
-        next_token();
+        nextToken();
             if(expression())
                 result = TRUE;
     }
@@ -406,19 +434,19 @@ boolean integer_type_definition(){
 boolean real_type_definition(){
     boolean result = FALSE;
     if(SYM_COUR.CODE == DIGITS_TOKEN){
-        next_token();
+        nextToken();
         if(SYM_COUR.CODE == NUM_TOKEN){
-            next_token();
+            nextToken();
             if(SYM_COUR.CODE == RANGE_TOKEN){
-                next_token();
+                nextToken();
                 if(SYM_COUR.CODE == NUM_TOKEN){
-                    next_token();
+                    nextToken();
                     if(SYM_COUR.CODE == PT_TOKEN){
-                        next_token();
+                        nextToken();
                         if(SYM_COUR.CODE == PT_TOKEN){
-                            next_token();
+                            nextToken();
                             if(SYM_COUR.CODE == NUM_TOKEN){
-                                next_token();
+                                nextToken();
                             }
                             else
                                 return result;
@@ -437,16 +465,16 @@ boolean real_type_definition(){
             }
             if(SYM_COUR.CODE == PO_TOKEN){
                 // TODO semantic check if num_token == 1
-                next_token();
+                nextToken();
                 if(SYM_COUR.CODE == NUM_TOKEN){
-                    next_token();
+                    nextToken();
                     if(SYM_COUR.CODE == MOINS_TOKEN){
-                        next_token();
+                        nextToken();
                         //TODO semantic check if ID_TOKEN == D
                         if(SYM_COUR.CODE == ID_TOKEN){
-                            next_token();
+                            nextToken();
                             if(SYM_COUR.CODE == ARRAY_TOKEN){
-                                next_token();
+                                nextToken();
                                 if(SYM_COUR.CODE == PF_TOKEN){
                                     result = true;
                                 }
@@ -465,24 +493,24 @@ boolean real_type_definition(){
 boolean array_type_definition(){
     boolean result = false;
     if(SYM_COUR.CODE == ARRAY_TOKEN){
-        next_token();
+        nextToken();
         if(SYM_COUR.CODE == PO_TOKEN){
-            next_token();
+            nextToken();
             if(SYM_COUR.CODE == ID_TOKEN){
-                next_token();
+                nextToken();
                 if(SYM_COUR.CODE == RANGE_TOKEN){
-                    next_token();
+                    nextToken();
                     if(SYM_COUR.CODE == DIFF_TOKEN){
-                        next_token();
+                        nextToken();
                     }
                     else if(SYM_COUR.CODE == NUM_TOKEN){
-                        next_token();
+                        nextToken();
                         if(SYM_COUR.CODE == PT_TOKEN){
-                            next_token();
+                            nextToken();
                             if(SYM_COUR.CODE == PT_TOKEN){
-                                next_token();
+                                nextToken();
                                 if(SYM_COUR.CODE == NUM_TOKEN){
-                                    next_token();
+                                    nextToken();
                                 }
                                 else
                                     return result;
@@ -497,9 +525,9 @@ boolean array_type_definition(){
                         return result; 
                 }
                 if(SYM_COUR.CODE == PF_TOKEN){
-                    next_token();
+                    nextToken();
                     if(SYM_COUR.CODE == OF_TOKEN){
-                        next_token();
+                        nextToken();
                         if(SYM_COUR.CODE == ID_TOKEN)
                             result = true;
                     }
@@ -515,9 +543,9 @@ boolean array_type_definition(){
 boolean record_type_definition(){
     boolean result = FALSE;
     if(SYM_COUR.CODE == NULL_TOKEN){
-        next_token();
+        nextToken();
         if(SYM_COUR.CODE == RECORD_TOKEN){
-            next_token();
+            nextToken();
             if(SYM_COUR.CODE == PV_TOKEN){
                 result = true;
             }
@@ -525,11 +553,11 @@ boolean record_type_definition(){
     }
     else{
         if(SYM_COUR.CODE == RECORD_TOKEN){
-            next_token();
+            nextToken();
             if(component_list()){
-                next_token();
+                nextToken();
                 if(SYM_COUR.CODE == END_TOKEN){
-                    next_token();
+                    nextToken();
                     if(SYM_COUR.CODE == RECORD_TOKEN){
                         result = true;
                     }
@@ -544,13 +572,13 @@ boolean component_list(){
     boolean result=FALSE;
     if(component_item()){
         do{
-            next_token();
+            nextToken();
         }while(SYM_COUR.CODE == component_item());
         result = TRUE;
     }
     else{
         if(SYM_COUR.CODE == NULL_TOKEN){
-            next_token()
+            nextToken()
             if(SYM_COUR.CODE == PV_TOKEN)
                 result = TRUE;
         }
@@ -562,13 +590,13 @@ boolean component_list(){
 boolean component_item(){
     boolean result = FALSE;
     if(SYM_COUR.CODE == ID_TOKEN){
-        next_token();
+        nextToken();
         if(SYM_COUR.CODE == DOUBLE_POINT_TOKEN){
-            next_token();
+            nextToken();
             if(SYM_COUR.CODE == ID_TOKEN){
-                next_token();
+                nextToken();
                 if(SYM_COUR.CODE == AFF_TOKEN){
-                    next_token();
+                    nextToken();
                     if(expression)
                         result = TRUE;
                 }
@@ -585,16 +613,16 @@ boolean component_item(){
 boolean object_number_declaration(){
     boolean result = FALSE;
     if(SYM_COUR.CODE == ID_TOKEN){
-        next_token();
+        nextToken();
         if(SYM_COUR.CODE == DOUBLE_POINT_TOKEN){
-            next_token();
+            nextToken();
             //TODO semanticcheck if ID_TOKEN is CONSTANT_TOKEN
             if(SYM_COUR.CODE == ID_TOKEN ||  SYM_COUR.CODE == CONSTANT_TOKEN){
-                next_token();
+                nextToken();
                 if(SYM_COUR.CODE == AFF_TOKEN){
-                    next_token();
+                    nextToken();
                     if(expression()){
-                        next_token()   
+                        nextToken()   
                         if(SYM_COUR.CODE == PV_TOKEN)
                             result = TRUE;
                     }                   
@@ -610,7 +638,7 @@ boolean sequence_statement(){
     boolean result = FALSE;
     if(statement()){
         do{
-            next_token();
+            nextToken();
         }while(statement());
         result = TRUE;
     }
@@ -633,7 +661,7 @@ boolean simple_statement(){
 boolean null_statement(){
     boolean result = FALSE;
     if(SYM_COUR.CODE == NULL_TOKEN){
-        next_token();
+        nextToken();
         if(SYM_COUR.CODE == PV_TOKEN)
             result = TRUE;
     }
@@ -644,12 +672,12 @@ boolean null_statement(){
 boolean exit_statement(){
     boolean result = false;;
     if(SYM_COUR.CODE == EXIT_TOKEN){
-        next_token();
+        nextToken();
         if(SYM_COUR.CODE == ID_TOKEN){
             result = TRUE;
         }
         else if(SYM_COUR.CODE == WHEN_TOKEN){
-                next_token();
+                nextToken();
                 if(expression())
                     result = true;
                 else
@@ -664,14 +692,9 @@ boolean exit_statement(){
 //goto_statement -> goto id;
 boolean goto_statement(){
     if(SYM_COUR.CODE == GOTO_TOKEN){
-        next_token();
+        nextToken();
         if(SYM_COUR.CODE == ID_TOKEN)
             return TRUE;
     }
     return FALSE;
 }
-
-
-
-
-
