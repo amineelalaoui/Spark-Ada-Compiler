@@ -29,6 +29,9 @@ void showCodeToken(Token token){
         case NUM_TOKEN:
             printf("NUM_TOKEN");
             break;
+        case FLOAT_TOKEN:
+            printf("FLOAT_TOKEN");
+            break;
         case BEGIN_TOKEN:
             printf("BEGIN_TOKEN");
             break;
@@ -180,8 +183,22 @@ void lire_nombre(){
         SYM_COUR.NOM[lonLex++] = Car_Cour;
         lire_Car();
     }
-
-   
+    SYM_COUR.CODE = NUM_TOKEN;
+    if ( Car_Cour == '.') { // on switch vers la lecture d'un float
+        SYM_COUR.NOM[lonLex++] = Car_Cour;
+        lire_Car();
+        if ( !isdigit(Car_Cour) ) {
+            ungetc(Car_Cour, fl);
+            SYM_COUR.NOM[lonLex - 1] = '\0';
+        }
+        else{
+            SYM_COUR.CODE = FLOAT_TOKEN;
+            while( isdigit(Car_Cour) ){
+                SYM_COUR.NOM[lonLex++] = Car_Cour;
+                lire_Car();
+            }
+        }
+    }
 
     if ( isalpha(Car_Cour) || isAccentLettre() || is_underscore() ) { // identificateur qui commence par des digits
         while ( isalnum(Car_Cour) || isAccentLettre() || is_underscore() ) {
@@ -189,13 +206,6 @@ void lire_nombre(){
             lire_Car();
         }
         detectError(ERR_ID_INV);
-        SYM_COUR.CODE = ERREUR_TOKEN;
-    }
-    else if (lonLex <= Max_NBRE) {
-        SYM_COUR.CODE = NUM_TOKEN;
-    }
-    else{ // Nombre est tres long
-        detectError(ERR_NBR_LONG);
         SYM_COUR.CODE = ERREUR_TOKEN;
     }
     //fin du mot
