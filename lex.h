@@ -43,8 +43,9 @@ COM_TOKEN,
 ID_TOKEN, NUM_TOKEN,ERREUR_TOKEN,
 PV_TOKEN, PT_TOKEN, PLUS_TOKEN, MOINS_TOKEN, MULT_TOKEN,
 DIV_TOKEN, VIR_TOKEN, AFF_TOKEN,EGAL_TOKEN, INF_TOKEN, INFEG_TOKEN,
-SUP_TOKEN, SUPEG_TOKEN, DIFF_TOKEN, PO_TOKEN, PF_TOKEN,
-FIN_TOKEN, DOUBLE_POINT_TOKEN, APP_TOKEN, DOUBLE_QUOTES_TOKEN
+SUP_TOKEN, SUPEG_TOKEN, DIFF_TOKEN, PO_TOKEN, PF_TOKEN,EC_TOKEN,
+FIN_TOKEN, DOUBLE_POINT_TOKEN, APP_TOKEN, DOUBLE_QUOTES_TOKEN,AFFEC_MULT_TOKEN,
+AFFEC_DIV_TOKEN,FLOAT_TOKEN,STRING_TOKEN
 } CODE_LEX ;
 
 
@@ -213,7 +214,7 @@ typedef struct  {
     char mes[40];
 } Erreurs;
 
-Erreurs MES_ERR[] = {
+static Erreurs MES_ERR[] = {
     {ERR_FLOAT_INV, "ERR_FLOAT_INV"},
     { ERR_CAR_INC, "CARACRETE: inconnu"},
     { ERR_FICH_VID, "FICHIER: vide"},
@@ -242,7 +243,7 @@ Erreurs MES_ERR[] = {
     {WRITE_ERR, "WRITE_ERR"},
     {READ_ERR, "READ_ERR"}
 };
-int tailleERR = sizeof MES_ERR / sizeof MES_ERR[0];
+static int tailleERR = sizeof MES_ERR / sizeof MES_ERR[0];
 
 //signatures des fonctions utilisees
 void showCodeToken(Token token);
@@ -256,6 +257,6 @@ void lire_spcial();
 void lire_commentaire(void );
 int detectError( Erreurs_t er);
 void nextToken(void);
-FILE *fl = NULL;
+static FILE *fl = NULL;
 
 #endif // LEX_H_INCLUDED
