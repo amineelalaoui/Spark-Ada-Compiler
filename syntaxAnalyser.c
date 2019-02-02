@@ -708,9 +708,8 @@ boolean goto_statement(){
     return FALSE;
 }
 
-//  procedure_call_or_assign_statement-> id ('(' params ')' | := expression) ;
+// 23 - procedure_call_or_assign_statement -> id ('(' params ')' | := expression) ;
 boolean procedure_call_or_assign_statement(){
-    boolean result = FALSE;
     if(SYM_COUR.CODE == ID_TOKEN){
         nextToken();
         if(SYM_COUR.CODE == PO_TOKEN){
@@ -720,7 +719,7 @@ boolean procedure_call_or_assign_statement(){
                 if(SYM_COUR.CODE == PF_TOKEN){
                     nextToken();
                     if(SYM_COUR.CODE == PV_TOKEN)
-                        result = TRUE;
+                        return true;
                 }
             }
         }
@@ -731,148 +730,80 @@ boolean procedure_call_or_assign_statement(){
                 if(expression()){
                     nextToken();
                     if(SYM_COUR.CODE == PV_TOKEN){
-                        result = false;
+                        return true;
                     }
                 }
             }
         } 
     }
-    return result;
+    return false;
 }
 
-// params -> [id =>] expression {, params}*
+// 24 - params -> [id =>] expression {, params}*
 boolean params(){
-    boolean result = FALSE;
-    boolean isEpsilon = FALSE;
-    follow_token = FALSE;
     if(SYM_COUR.CODE == ID_TOKEN){
         nextToken();
         if(SYM_COUR.CODE == EGAL_TOKEN ){
             nextToken();
             if(SYM_COUR.CODE == SUP_TOKEN ){
                 nextToken();
-                if(expression()){
-                    // TODO ADD AO_TOKEN in lex.h an lex.c
-                    while(isEpsilon == FALSE){
-                        nextToken();
-                        if(SYM_COUR.CODE == AO_TOKEN){
-                            nextToken();
-                            if(SYM_COUR.CODE == VIR_TOKEN){
-                                nextToken();
-                                if(params()){
-                                    nextToken();
-                                    if(SYM_COUR.CODE == AF_TOKEN)
-                                        continue;
-                                }
-                                else{
-                                    //syntax error
-                                    follow_token = FALSE;
-                                    isEpsilon = TRUE;
-                                    result = FALSE;
-                                }
-                            }
-                            else{
-                                //syntax error
-                                follow_token = FALSE;
-                                isEpsilon = TRUE;
-                                result = FALSE;
-                            }
-                        }
-                        else{
-                                //epsilon
-                                follow_token = TRUE;
-                                isEpsilon = TRUE;
-                                result = TRUE;
-                        }
-                    }
-                }
             }
+            else return false;
         }
+        else follow_token = true;
     }
-    else{
-        // if [id =>] is missing
-        if(expression()){
-            // TODO ADD AO_TOKEN in lex.h an lex.c
-            while(isEpsilon == FALSE){
-                nextToken();
-                if(SYM_COUR.CODE == AO_TOKEN){
-                    nextToken();
-                    if(SYM_COUR.CODE == VIR_TOKEN){
-                        nextToken();
-                        if(params()){
-                            nextToken();
-                            if(SYM_COUR.CODE == AF_TOKEN)
-                                continue;
-                        }
-                        else{
-                            //syntax error
-                            follow_token = FALSE;
-                            isEpsilon = TRUE;
-                            result = FALSE;
-                        }
-                    }
-                    else{
-                        //syntax error
-                        follow_token = FALSE;
-                        isEpsilon = TRUE;
-                        result = FALSE;
-                    }
-                }
-                else{
-                        //epsilon
-                        follow_token = TRUE;
-                        isEpsilon = TRUE;
-                        result = TRUE;
-                }
+    if(expression()){
+        nextToken();
+        while(SYM_COUR.CODE == VIR_TOKEN){
+            nextToken();
+            if(! params()){
+                return false;
             }
+            nextToken();
         }
-
+        follow_token = true;
+        return true;
     }
-    return result;
+    return false;;
 }
 
-//return_statement -> return [expression] ;
+//25 - return_statement -> return [expression] ;
 
 boolean return_statement(){
-    boolean result = FALSE;
     if(SYM_COUR.CODE == RETURN_TOKEN){
         next_token();
-        if(expression())
-            result = FALSE;
-        else{
-            follow_token = TRUE;
-            result = TRUE;
+        if(SYM_COUR.CODE == PV_TOKEN)
+            return true;
+        if(expression()){
+            next_token();
+            if(SYM_COUR.CODE == PV_TOKEN)
+                return true;
         }
     }
-    return result;
+    return false;
 }
 
-//compound_statement ::= if_statement | case_statement | loop_statement | block_statement
+//26 - compound_statement ::= if_statement | case_statement | loop_statement | block_statement
 
 boolean compound_statement(){
     if(SYM_COUR.CODE == IF_TOKEN){
-        follow_token = TRUE;
         return if_statement();
     }
     else if(SYM_COUR.CODE == CASE_TOKEN){
-        follow_token = TRUE;
         return case_statement();
     }
     else if(SYM_COUR.CODE == WHILE_TOKEN || SYM_COUR.CODE == FOR_TOKEN || SYM_COUR.CODE == LOOP_TOKEN){
-        follow_token = TRUE;
         return loop_statement();
     }
     else if(SYM_COUR.CODE == DECLARE_TOKEN || SYM_COUR.CODE == BEGIN_TOKEN ){
-        follow_token = TRUE;
         return block_statement();
     }
-    return FALSE;
+    return false;
 }
 
-// if_statement -> if expression then sequence_statement [elsif expression then sequence_statement]* [else sequence_statement] end if;
+//27 - if_statement -> if expression then sequence_statement [elsif expression then sequence_statement]* [else sequence_statement] end if;
 
 boolean if_statement(){
-    boolean isEpsilon = FALSE;
     if(SYM_COUR.CODE == IF_TOKEN){
         nextToken();
         if(expression()){
@@ -880,75 +811,47 @@ boolean if_statement(){
             if(SYM_COUR.CODE == THEN_TOKEN){
                 nextToken();
                 if(sequence_statement()){
-                    while(isEpsilon == FALSE){
+                    nextToken();
+                    while(SYM_COUR.CODE == ELSIF_TOKEN){
                         nextToken();
-                        if(SYM_COUR.CODE == ELSIF_TOKEN){
+                        if(expression()){
                             nextToken();
-                            if(expression()){
+                            if(SYM_COUR.CODE == THEN_TOKEN){
                                 nextToken();
-                                if(SYM_COUR.CODE == THEN_TOKEN){
+                                if(sequence_statement())
                                     nextToken();
-                                    if(sequence_statement())
-                                        continue;
-                                    else
-                                        return FALSE;
-            
-                                }
                                 else
-                                    return FALSE;
+                                    return false;
                             }
                             else
-                                return FALSE;
+                                return false;
                         }
-                        else{
-                            isEpsilon = TRUE;
-                        }
+                        else
+                            return false;
                     }
                     //SYM_COUR contains already the follow token. so, no need to call nextToken
                     if(SYM_COUR.CODE == ELSE_TOKEN){
                         nextToken();
                         if(sequence_statement()){
                             nextToken();
-                            if(SYM_COUR.CODE == END_TOKEN){
-                                nextToken();
-                                if(SYM_COUR.CODE == IF_TOKEN){
-                                    nextToken();
-                                    if(SYM_COUR.CODE == PV_TOKEN)
-                                        return TRUE;
-                                }
-                                else
-                                    return TRUE;
-                            }
-                            else
-                                return FALSE;
                         }
                         else
-                            return FALSE;
+                            return false;
                     }
-                    else{
-                        if(SYM_COUR.CODE == END_TOKEN){
-                                nextToken();
-                                if(SYM_COUR.CODE == IF_TOKEN){
-                                    nextToken();
-                                    if(SYM_COUR.CODE == PV_TOKEN)
-                                        return TRUE;
-                                }
-                                else
-                                    return TRUE;
-                            }
-                            else
-                                return FALSE;
+                    if(SYM_COUR.CODE == END_TOKEN){
+                        nextToken();
+                        if(SYM_COUR.CODE == IF_TOKEN){
+                            nextToken();
+                            if(SYM_COUR.CODE == PV_TOKEN)
+                                return true;
+                        }
                     }
-
-                    
                 }
             }
         }
     }
-    return FALSE;
+    return false;
 }
-
-// case_statement -> case expression is case_statement_alt {case_statement_alt}* end case;
 
 
 //31 - block_statement -> [declare (basic_declaration)*]
