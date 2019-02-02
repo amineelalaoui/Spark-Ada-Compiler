@@ -862,16 +862,22 @@ boolean case_statement(){
         nextToken();
         if(expression()){
             nextToken();
-            if(SYM_COUR.CODE = IS_TOKEN){
+            if(SYM_COUR.CODE == IS_TOKEN){
                 nextToken();
                 if(case_statement_alt()){
-                    do{
+                    nextToken();
+                    while(SYM_COUR.CODE == WHEN_TOKEN){
+                        case_statement_alt();
                         nextToken();
-                    }while(case_statement_alt());
+                    }
                     if(SYM_COUR.CODE == END_TOKEN){
                         nextToken();
-                        if(SYM_COUR.CODE == CASE_TOKEN)
-                        return TRUE;
+                        if(SYM_COUR.CODE == CASE_TOKEN){
+                            nextToken();
+                            if(SYM_COUR.CODE == PV_TOKEN){
+                                return TRUE;
+                            }
+                        }
                     }
                 }
             }
@@ -888,10 +894,12 @@ boolean case_statement_alt(){
         if(SYM_COUR.CODE == PLUS_TOKEN || SYM_COUR.CODE == MOINS_TOKEN || SYM_COUR.CODE == NULL_TOKEN || SYM_COUR.CODE == STRING_TOKEN || SYM_COUR.CODE == ID_TOKEN || SYM_COUR.CODE == NUM_TOKEN || SYM_COUR.CODE == PO_TOKEN){
             if(simple_expression()){
                 nextToken();
-                if(SYM_COUR.CODE == AFF_TOKEN){
+                if(SYM_COUR.CODE == EGAL_TOKEN){
                     nextToken();
-                    if(sequence_statement())
-                        return TRUE;
+                    if(SYM_COUR.CODE == SUP_TOKEN){
+                        nextToken();
+                        if(sequence_statement())
+                            return TRUE;
                 }
             }
             // TODO Others 
@@ -900,7 +908,10 @@ boolean case_statement_alt(){
     return FALSE;
 }
 
-// 30 -  loop_statement -> [(while expression | for id in [reverse] simple_expression .. simple_expression)] loop sequence_statement end loop;
+// 30 -  loop_statement -> [(while expression 
+//                              | 
+//                          for id in [reverse] simple_expression .. simple_expression)] 
+//      loop sequence_statement end loop;
 
 boolean loop_statement(){
     if(SYM_COUR.CODE == WHILE_TOKEN){
@@ -916,16 +927,14 @@ boolean loop_statement(){
                 nextToken();
                 if(SYM_COUR.CODE == REVERSE_TOKEN){
                     nextToken();
-                    if(simple_expression()){
+                }
+                if(simple_expression()){
+                    nextToken();
+                    if(SYM_COUR.CODE == PT_TOKEN){
                         nextToken();
                         if(SYM_COUR.CODE == PT_TOKEN){
                             nextToken();
-                            if(SYM_COUR.CODE == PT_TOKEN){
-                                nextToken();
-                                if(!simple_expression())
-                                    return FALSE;
-                            }
-                            else
+                            if(!simple_expression())
                                 return FALSE;
                         }
                         else
@@ -960,7 +969,6 @@ boolean loop_statement(){
     }
     return FALSE;
 }
-
 
 //31 - block_statement -> [declare (basic_declaration)*]
 //                   begin
