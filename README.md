@@ -99,7 +99,7 @@ spark ada grammar :
 
 32 - expression -> relation [(and| or | xor) relation]*
 
-33 - relation -> simple_expression [(= | / | =/ | < | <= | > |>= )  simple_expression
+33 - relation -> simple_expression [(= | =* | =/ | < | <= | > |>= )  simple_expression
                                 | (not | in) T_NUMERIC .. T_NUMERIC
                               ]
 

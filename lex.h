@@ -137,6 +137,9 @@ static Token tabToken[] = {
 
 
     //literals = ['&','(',')','*','+',',','-','.','/',':',';','<','=','>','|'] + ['\"','#']
+    {EC_TOKEN ,"&"},
+    {AFFEC_MULT_TOKEN ,"=*"},
+    {AFFEC_DIV_TOKEN ,"=/"},
     //les caractere speciaux
     {PV_TOKEN ,";"},
     {DOUBLE_POINT_TOKEN ,":"},
@@ -161,6 +164,8 @@ static Token tabToken[] = {
     //{FIN_TOKEN ,EOF},
     //{ID_TOKEN, ID},
     //{NUM_TOKEN, NUM}
+    //{FLOAT_TOKEN, FLOAT}
+    // {STRING_TOKEN, STRING}
     //,{ERREUR_TOKEN, RESTE}
 };
 
