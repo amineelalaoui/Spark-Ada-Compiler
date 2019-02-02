@@ -690,7 +690,7 @@ boolean exit_statement(){
     return false;
 }
 
-//21 - goto_statement -> goto id;
+//22- goto_statement -> goto id;
 boolean goto_statement(){
     if(SYM_COUR.CODE == GOTO_TOKEN){
         nextToken();
