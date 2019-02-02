@@ -962,7 +962,6 @@ boolean loop_statement(){
 }
 
 
-
 //31 - block_statement -> [declare (basic_declaration)*]
 //                   begin
 //                      sequence_statement
@@ -972,16 +971,20 @@ boolean block_statement(){
     if(SYM_COUR.CODE == DECLARE_TOKEN){
         nextToken();
         while(SYM_COUR.CODE == TYPE_TOKEN || SYM_COUR.CODE == ID_TOKEN ){
-            basic_declaration();
+            if(!basic_declaration()) return false;
             nextToken();
         }
     }
     if( SYM_COUR.CODE == BEGIN_TOKEN){
         nextToken();
-        sequence_statement();
-        nextToken();
-        if( SYM_COUR.CODE == END_TOKEN){
-            return true;
+        if(sequence_statement()){
+            nextToken();
+            if( SYM_COUR.CODE == END_TOKEN){
+                nextToken();
+                if( SYM_COUR.CODE == PV_TOKEN){
+                    return true;
+                }
+            }
         }
     }
     return false;
@@ -994,6 +997,7 @@ boolean expression(){
         while( SYM_COUR.CODE == AND_TOKEN || SYM_COUR.CODE == OR_TOKEN || SYM_COUR.CODE == XOR_TOKEN ){
             nextToken();
             if( !relation()) return false;
+            nextToken();
         }
         follow_token = true;
         return true;
@@ -1001,9 +1005,10 @@ boolean expression(){
     return false;
 }
 
-// 33 - relation -> simple_expression [(= | =* | =/ | < | <= | > |>= )  simple_expression
-//                                 | (not | in) NUM_TOKEN .. NUM_TOKEN
-//                               ]
+// 33 - relation -> simple_expression [     (= | =* | =/ | < | <= | > |>= )  simple_expression
+//                                      | 
+                    //                      (not | in) NUM_TOKEN .. NUM_TOKEN
+//                                    ]
 boolean relation(){
     if( simple_expression() ){
         nextToken();
@@ -1011,7 +1016,7 @@ boolean relation(){
             nextToken();
             return simple_expression();
         }
-        else if ( SYM_COUR.CODE == NOT_TOKEN || SYM_COUR.CODE == IN_TOKEN ) {
+        if ( SYM_COUR.CODE == NOT_TOKEN || SYM_COUR.CODE == IN_TOKEN ) {
             nextToken();
             if( SYM_COUR.CODE == NUM_TOKEN){
                 nextToken();
@@ -1041,6 +1046,7 @@ boolean simple_expression{
         while( SYM_COUR.CODE == PLUS_TOKEN || SYM_COUR.CODE == MOINS_TOKEN || SYM_COUR.CODE == EC_TOKEN ){
             nextToken();
             if( !term()) return false;
+            nextToken();
         }
         follow_token = true;
         return true;
@@ -1052,9 +1058,10 @@ boolean simple_expression{
 boolean term(){
     if( factor()){
         nextToken();
-        while( SYM_COUR.CODE == MULT_TOKEN || SYM_COUR.CODE == DIV_TOKEN || SYM_COUR.CODE == MOD_TOKEN ){
+        while( SYM_COUR.CODE == MULT_TOKEN || SYM_COUR.CODE == DIV_TOKEN || SYM_COUR.CODE == MOD_TOKEN){
             nextToken();
             if( !factor()) return false;
+            nextToken();            
         }
         follow_token = true;
         return true;
