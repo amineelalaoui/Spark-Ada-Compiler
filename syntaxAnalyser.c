@@ -951,3 +951,143 @@ boolean if_statement(){
 // case_statement -> case expression is case_statement_alt {case_statement_alt}* end case;
 
 
+//31 - block_statement -> [declare (basic_declaration)*]
+//                   begin
+//                      sequence_statement
+//                    end;
+
+boolean block_statement(){
+    if(SYM_COUR.CODE == DECLARE_TOKEN){
+        nextToken();
+        while(SYM_COUR.CODE == TYPE_TOKEN || SYM_COUR.CODE == ID_TOKEN ){
+            basic_declaration();
+            nextToken();
+        }
+    }
+    if( SYM_COUR.CODE == BEGIN_TOKEN){
+        nextToken();
+        sequence_statement();
+        nextToken();
+        if( SYM_COUR.CODE == END_TOKEN){
+            return true;
+        }
+    }
+    return false;
+}
+
+// 32 - expression -> relation [(and| or | xor) relation]*
+boolean expression(){
+    if( relation()) {
+        nextToken();
+        while( SYM_COUR.CODE == AND_TOKEN || SYM_COUR.CODE == OR_TOKEN || SYM_COUR.CODE == XOR_TOKEN ){
+            nextToken();
+            if( !relation()) return false;
+        }
+        follow_token = true;
+        return true;
+    }
+    return false;
+}
+
+// 33 - relation -> simple_expression [(= | =* | =/ | < | <= | > |>= )  simple_expression
+//                                 | (not | in) NUM_TOKEN .. NUM_TOKEN
+//                               ]
+boolean relation(){
+    if( simple_expression() ){
+        nextToken();
+        if( SYM_COUR.CODE == EGAL_TOKEN || SYM_COUR.CODE == AFFEC_MULT_TOKEN || SYM_COUR.CODE == AFFEC_DIV_TOKEN || SYM_COUR.CODE == INF_TOKEN || SYM_COUR.CODE == INFEG_TOKEN || SYM_COUR.CODE == SUP_TOKEN || SYM_COUR.CODE == SUPEG_TOKEN ){
+            nextToken();
+            return simple_expression();
+        }
+        else if ( SYM_COUR.CODE == NOT_TOKEN || SYM_COUR.CODE == IN_TOKEN ) {
+            nextToken();
+            if( SYM_COUR.CODE == NUM_TOKEN){
+                nextToken();
+                if( SYM_COUR.CODE == PT_TOKEN){
+                    nextToken();
+                    if( SYM_COUR.CODE == PT_TOKEN){
+                        nextToken();
+                        if( SYM_COUR.CODE == NUM_TOKEN){
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return false;
+}
+
+
+// 34 - simple_expression -> [+ | -] term { (+ | - | &) term }*
+boolean simple_expression{
+    if ( SYM_COUR.CODE == PLUS_TOKEN || SYM_COUR.CODE == MOINS_TOKEN ){
+        nextToken();
+    }
+    if( term()){
+        nextToken();
+        while( SYM_COUR.CODE == PLUS_TOKEN || SYM_COUR.CODE == MOINS_TOKEN || SYM_COUR.CODE == EC_TOKEN ){
+            nextToken();
+            if( !term()) return false;
+        }
+        follow_token = true;
+        return true;
+    }
+    return false;
+}
+
+// 35 - term  -> factor {(* | / | mod | rem) factor}*
+boolean term(){
+    if( factor()){
+        nextToken();
+        while( SYM_COUR.CODE == MULT_TOKEN || SYM_COUR.CODE == DIV_TOKEN || SYM_COUR.CODE == MOD_TOKEN ){
+            nextToken();
+            if( !factor()) return false;
+        }
+        follow_token = true;
+        return true;
+    }
+    return false;
+}
+// 36 - factor -> primary [** primary]
+        // | abs primary
+        // |not primary
+boolean factor(){
+    if( SYM_COUR.CODE == ABS_TOKEN || SYM_COUR.CODE == NOT_TOKEN){
+        nextToken();
+        return primary();
+    }
+    else {
+        if ( primary()){
+            nextToken();
+            if( SYM_COUR.CODE == MULT_TOKEN ){
+                nextToken();
+                if( SYM_COUR.CODE == MULT_TOKEN ){
+                    return primary();
+                }
+            }
+            else{
+                follow_token = true;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+// 37 - primary -> NULL_TOKEN | STRING_TOKEN | id | NUM_TOKEN | FLOAT_TOKEN  | '(' expression ')'
+boolean primary(){
+    if ( SYM_COUR.CODE == NULL_TOKEN || SYM_COUR.CODE == STRING_TOKEN || SYM_COUR.CODE == ID_TOKEN || SYM_COUR.CODE == NUM_TOKEN || SYM_COUR.CODE == FLOAT_TOKEN){
+        return true;
+    }
+    else if( SYM_COUR.CODE == PO_TOKEN ){
+        nextToken();
+        if ( expression() ){
+            nextToken();
+            if( SYM_COUR.CODE == PF_TOKEN ){
+                return true;
+            }
+        }
+    }
+    return false;
+}
