@@ -3,1134 +3,3394 @@
 #include <string.h>
 #include <ctype.h>
 #include "lex.h"
+#include "semanticAnalyser.h"
+#include "pseudo_code_generator.h"
+
+
+
+#define debugSYNT 1
+
+
+
+int last_IND = 0;
+int last_INDO = 0;
+boolean drapMINUS = 0;
+
 
 /**
+
 *
+
 * @author : Mohamed Amine EL ALAOUI
+
 * @author : KHALIL Idriss
+
 * @author : MEFTAHI Abderrahman
+
 * @author : LAATAATA Abderrazak
+
 **/
 
-#define Max_NBRE 20
-#define TAILLE_TAB_SYMBOLE 50
 
-boolean debugLEX = TRUE;
 
-/**
- * global variables
- * 
- * */
-CODE_LEX LAST;
+boolean list_with_use_clause();
 
- Token tabToken[] = {
+boolean enumeration_type_definition();
 
-    {ABORT_TOKEN ,"abort"},
+boolean multiple_id();
 
-    {ABS_TOKEN ,"abs"},
+boolean with_use_clause();
 
-    {ABSTRACT_TOKEN ,"abstract"},
+boolean subprogram_specification();
 
-    {ACCEPT_TOKEN ,"accept"},
+boolean type_declaration();
 
-    {ACCESS_TOKEN ,"access"},
+boolean parameter_specification();
 
-    {ALIASED_TOKEN ,"aliased"},
+boolean other_parameter_specification();
 
-    {ALL_TOKEN ,"all"},
+boolean formal_part();
 
-    {AND_TOKEN ,"and"},
+boolean basic_declaration();
 
-    {ARRAY_TOKEN ,"array"},
 
-    {AT_TOKEN ,"at"},
 
-    {BEGIN_TOKEN ,"begin"},
 
-    {TRUE_TOKEN ,"true"},
+boolean subprogram_body();
 
-    {FALSE_TOKEN ,"false"},
+boolean program();
 
-    {PRINT_TOKEN ,"print"},
+boolean integer_type_definition();
 
-    {READ_TOKEN ,"read"},
+boolean real_type_definition();
 
-    {BODY_TOKEN ,"body"},
+boolean array_type_definition();
 
-    {CASE_TOKEN ,"case"},
+boolean record_type_definition();
 
-    {CONSTANT_TOKEN ,"constant"},
+boolean component_list();
 
-    {DECLARE_TOKEN ,"declare"},
+boolean component_item();
 
-    {DELAY_TOKEN ,"delay"},
+boolean component_item();
 
-    {DELTA_TOKEN ,"delta"},
+boolean sequence_statement();
 
-    {DIGITS_TOKEN ,"digits"},
+boolean statement();
 
-    {DO_TOKEN ,"do"},
+boolean simple_statement();
 
-    {ELSE_TOKEN ,"else"},
+boolean null_statement();
 
-    {ELSIF_TOKEN ,"elsif"},
+boolean lire_number();
 
-    {END_TOKEN ,"end"},
+boolean exit_statement();
 
-    {ENTRY_TOKEN ,"entry"},
+boolean goto_statement();
 
-    {EXCEPTION_TOKEN ,"exception"},
+boolean object_number_declaration();
 
-    {EXIT_TOKEN ,"exit"},
+boolean sequence_statement();
 
-    {FOR_TOKEN ,"for"},
+boolean statement();
 
-    {FUNCTION_TOKEN ,"function"},
+boolean null_statement();
 
-    {GENERIC_TOKEN ,"generic"},
+boolean exit_statement();
 
-    {GOTO_TOKEN ,"goto"},
+boolean goto_statement();
 
-    {IF_TOKEN ,"if"},
+boolean procedure_call_or_assign_statement();
 
-    {IN_TOKEN ,"in"},
+boolean params();
 
-    {INTERFACE_TOKEN ,"interface"},
+boolean return_statement();
 
-    {IS_TOKEN ,"is"},
+boolean compound_statement();
 
-    {LIMITED_TOKEN ,"limited"},
+boolean if_statement();
 
-    {LOOP_TOKEN ,"loop"},
+boolean case_statement();
 
-    {MOD_TOKEN ,"mod"},
+boolean case_statement_alt();
 
-    {NEW_TOKEN ,"new"},
+boolean loop_statement();
 
-    {NOT_TOKEN ,"not"},
+boolean block_statement();
 
-    {NULL_TOKEN ,"null"},
+boolean expression();
 
-    {OF_TOKEN ,"of"},
+boolean relation();
 
-    {OR_TOKEN ,"or"},
+boolean simple_expression();
 
-    {OTHERS_TOKEN ,"others"},
+boolean term ();
 
-    {OUT_TOKEN ,"out"},
+boolean factor();
 
-    {OVERRIDING_TOKEN ,"overriding"},
+boolean primary();
 
-    {PACKAGE_TOKEN ,"package"},
+boolean package_body();
 
-    {PRAGMA_TOKEN ,"pragma"},
+boolean package_body_aux();
 
-    {PRIVATE_TOKEN ,"private"},
+boolean package_body_adb();
 
-    {PROCEDURE_TOKEN ,"procedure"},
+boolean refinement_definition();
 
-    {PROTECTED_TOKEN, "protected"},
+boolean package_implementation();
 
-    {RAISE_TOKEN ,"raise"},
+boolean package_body_ads();
 
-    {RANGE_TOKEN ,"range"},
+boolean pragma_argument_association();
 
-    {RECORD_TOKEN ,"record"},
+boolean main_program();
+boolean print();
+boolean read();
 
-    {REM_TOKEN ,"rem"},
 
-    {RENAMES_TOKEN ,"renames"},
+int main(int argc, char* argv[]){
 
-    {REQUEUE_TOKEN ,"requeue"},
+  if (!argv[1]) {
 
-    {RETURN_TOKEN ,"return"},
+        printf("fichier n'exste pas\n");
 
-    {REVERSE_TOKEN ,"reverse"},
-
-    {SELECT_TOKEN ,"select"},
-
-    {SEPARATE_TOKEN ,"separate"},
-
-    {SOME_TOKEN ,"some"},
-
-    {SUBTYPE_TOKEN ,"subtype"},
-
-    {SYNCHRONIZED_TOKEN ,"synchronized"},
-
-    {TAGGED_TOKEN ,"tagged"},
-
-    {TASK_TOKEN ,"task"},
-
-    {TERMINATE_TOKEN ,"terminate"},
-
-    {THEN_TOKEN ,"then"},
-
-    {TYPE_TOKEN ,"type"},
-
-    {UNTIL_TOKEN ,"until"},
-
-    {USE_TOKEN ,"use"},
-
-    {FIRST_TOKEN ,"first"},
-
-    {LAST_TOKEN ,"last"},
-
-    {WHEN_TOKEN ,"when"},
-
-    {WHILE_TOKEN ,"while"},
-
-    {WITH_TOKEN ,"with"},
-
-    {XOR_TOKEN ,"xor"},
-
-
-
-
-
-    //literals = ['&','(',')','*','+',',','-','.','/',':',';','<','=','>','|'] + ['\"','#']
-
-    {EC_TOKEN ,"&"},
-
-    {AFFEC_MULT_TOKEN ,"=*"},
-
-    {AFFEC_DIV_TOKEN ,"=/"},
-
-    //les caractere speciaux
-
-    {PV_TOKEN ,";"},
-
-    {DOUBLE_POINT_TOKEN ,":"},
-
-    {PT_TOKEN ,"."},
-
-    {PLUS_TOKEN ,"+"},
-
-    {MOINS_TOKEN ,"-"},
-
-    {MULT_TOKEN ,"*"},
-
-    {DIV_TOKEN ,"/"},
-
-    {VIR_TOKEN ,","},
-
-    {EGAL_TOKEN ,"="},
-
-    {DIV_AFFEC_TOKEN ,"/="},
-
-    {MULT_AFFEC_TOKEN ,"*="},
-
-    {AFF_TOKEN ,":="},
-
-    {INF_TOKEN ,"<"},
-
-    {INFEG_TOKEN ,"<="},
-
-    {SUP_TOKEN ,">"},
-
-    {SUPEG_TOKEN ,">="},
-
-    {DIFF_TOKEN ,"<>"},
-
-    {PO_TOKEN ,"("},
-
-    {PF_TOKEN ,")"},
-
-    {APP_TOKEN ,"'"},
-
-    {DOUBLE_QUOTES_TOKEN ,"\""},
-
-    {COM_TOKEN ,"--"},
-
-    //{FIN_TOKEN ,EOF},
-
-    //{ID_TOKEN, ID},
-
-    //{NUM_TOKEN, NUM}
-
-    //{FLOAT_TOKEN, FLOAT}
-
-    // {STRING_TOKEN, STRING}
-
-    //,{ERREUR_TOKEN, RESTE}
-
-};
-
-int nbMotRes = sizeof tabToken / sizeof tabToken[0];
-
-char Car_Cour;
-boolean follow_token = FALSE;
-boolean first;
-Token SYM_COUR;
-
-Erreurs MES_ERR[] = {
-    {RETURN_ERR, "RETURN_ERR"},
-    {IF_ERR, "IF_ERR"},
-    {THEN_ERR, "THEN_ERR"},
-    {CASE_ERR, "CASE_ERR"},
-    {IS_ERR, "IS_ERR"},
-    {SUP_ERR, "SUP_ERR"},
-    {IN_ERR, "IN_ERR"},
-    {FUNC_NAME_ERR, "FUNC_NAME_ERR"},
-    {DOUBLE_QUOTES_ERR, "DOUBLE_QUOTES_ERR"},
-    {OF_ERR, "OF_ERR"},
-    {RECORD_ERR, "RECORD_ERR"},
-    {APP_ERR, "APP_ERR"},
-    {LOOP_ERR, "LOOP_ERR"},
-    {DOUBLE_POINT_ERR, "DOUBLE_POINT"},
-    { ERR_CAR_INC, "CARACRETE: inconnu"},
-    { ERR_FICH_VID, "FICHIER: vide"},
-    {ERR_ID_LONG, "IDF: tres long"},
-    {ERR_ID_INV, "IDF: non valide "},
-    {ERR_NBR_LONG, "NUMBER: tres long"},
-    {ERR_OP_INC, "OPERATEUR: non complet"},
-    {ERR_COM_INC, "COMMENTAIRE: delimiteur absent"},
-    {PROGRAM_ERR, "PROGRAM_ERR"},
-    {ID_ERR, "ID_ERR"},
-    {PV_ERR, "PV_ERR"},
-    {PT_ERR, "PT_ERR"},
-    {EGAL_ERR, "EGAL_ERR"},
-    {NUM_ERR, "NUM_ERR"},
-    {CONST_VAR_BEGIN_ERR, "CONST_VAR_BEGIN_ERR"},
-    {BEGIN_ERR, "BEGIN_ERR"},
-    {END_ERR, "END_ERR"},
-    {INST_END_ERR, "INST_END_ERR"},
-    {AFF_ERR, "AFF_ERR"},
-    {PO_ERR, "PO_ERR"},
-    {PF_ERR, "PF_ERR"},
-    {IF_THEN_ERR, "IF_THEN_ERR"},
-    {OP_COMPAR_ERR, "OP_COMPAR_ERR"},
-    {FACT_NOT_FOUND_ERR, "FACT_NOT_FOUND_ERR"}, 
-    {WHILE_DO_ERR, "WHILE_DO_ERR"}, 
-    {WRITE_ERR, "WRITE_ERR"},
-    {READ_ERR, "READ_ERR"},
-    {GENCODE_TAILLE_ERR, "GENCODE_TAILLE_ERR"},
-    {INST_PCODE_ERR, "INST_PCODE_ERR"}
-};
-int tailleERR = sizeof MES_ERR / sizeof MES_ERR[0];
-FILE *fl = NULL;
-
-void showCodeToken(Token token){
-
-
-    switch((int)token.CODE){
-
-        case ID_TOKEN:
-            if(debugLEX)
-                printf("ID_TOKEN");
-
-            break;
-
-        case NUM_TOKEN:
-
-            if(debugLEX) printf("NUM_TOKEN");
-
-            break;
-
-        case FLOAT_TOKEN:
-
-            if(debugLEX) printf("FLOAT_TOKEN");
-
-            break;
-
-        case BEGIN_TOKEN:
-
-            if(debugLEX) printf("BEGIN_TOKEN");
-
-            break;
-
-        case FALSE_TOKEN:
-
-            if(debugLEX) printf("FALSE_TOKEN");
-
-            break;
-
-        case TRUE_TOKEN:
-
-            if(debugLEX) printf("TRUE_TOKEN");
-
-            break;
-        
-        case PRINT_TOKEN:
-
-            if(debugLEX) printf("PRINT_TOKEN");
-
-            break;
-
-        case READ_TOKEN:
-
-            if(debugLEX) printf("READ_TOKEN");
-
-            break;
-
-        case END_TOKEN:
-
-            if(debugLEX) printf("END_TOKEN");
-
-            break;
-
-        case IF_TOKEN:
-
-            if(debugLEX) printf("IF_TOKEN");
-
-            break;
-
-        case THEN_TOKEN:
-
-            if(debugLEX) printf("THEN_TOKEN");
-
-            break;
-
-        case WHILE_TOKEN:
-
-            if(debugLEX) printf("WHILE_TOKEN");
-
-            break;
-
-
-
-
-
-
-
-
-
-
-
-        case PV_TOKEN:
-
-            if(debugLEX) printf("PV_TOKEN");
-
-            break;
-
-        case PT_TOKEN:
-
-            if(debugLEX) printf("PT_TOKEN");
-
-            break;
-
-        case PLUS_TOKEN:
-
-            if(debugLEX) printf("PLUS_TOKEN");
-
-            break;
-
-        case MOINS_TOKEN:
-
-            if(debugLEX) printf("MOINS_TOKEN");
-
-            break;
-
-        case MULT_TOKEN:
-
-            if(debugLEX) printf("MULT_TOKEN");
-
-            break;
-
-        case DIV_TOKEN:
-
-            if(debugLEX) printf("DIV_TOKEN");
-
-            break;
-
-        case VIR_TOKEN:
-
-            if(debugLEX) printf("VIR_TOKEN");
-
-            break;
-
-        case EGAL_TOKEN:
-
-            if(debugLEX) printf("EGAL_TOKEN");
-
-            break;
-
-        case MULT_AFFEC_TOKEN:
-
-            if(debugLEX) printf("MULT_AFFEC_TOKEN");
-
-            break;
-
-        case DIV_AFFEC_TOKEN:
-
-            if(debugLEX) printf("DIV_AFFEC_TOKEN");
-
-            break;
-
-        case AFF_TOKEN:
-
-            if(debugLEX) printf("AFF_TOKEN");
-
-            break;
-
-        case INF_TOKEN:
-
-            if(debugLEX) printf("INF_TOKEN");
-
-            break;
-
-        case INFEG_TOKEN:
-
-            if(debugLEX) printf("INFEG_TOKEN");
-
-            break;
-
-        case SUP_TOKEN:
-
-            if(debugLEX) printf("SUP_TOKEN");
-
-            break;
-
-        case SUPEG_TOKEN:
-
-            if(debugLEX) printf("SUPEG_TOKEN");
-
-            break;
-
-        case DIFF_TOKEN:
-
-            if(debugLEX) printf("DIFF_TOKEN");
-
-            break;
-
-        case PO_TOKEN:
-
-            if(debugLEX) printf("PO_TOKEN");
-
-            break;
-
-        case PF_TOKEN:
-
-            if(debugLEX) printf("PF_TOKEN");
-
-            break;
-
-        case FIN_TOKEN:
-
-            if(debugLEX) printf("FIN_TOKEN");
-
-            break;
-
-        case IN_TOKEN:
-
-            if(debugLEX) printf("IN_TOKEN");
-
-            break;
-
-        case DOUBLE_POINT_TOKEN:
-
-            if(debugLEX) printf("DOUBLE_POINT_TOKEN");
-
-            break;
-
-        case APP_TOKEN:
-
-            if(debugLEX) printf("APP_TOKEN");
-
-            break;
-
-        case DOUBLE_QUOTES_TOKEN:
-
-            if(debugLEX) printf("DOUBLE_QUOTES_TOKEN");
-
-            break;
-        
-        case IS_TOKEN:
-
-            if(debugLEX) printf("IS_TOKEN");
-
-            break;
-
-        case ERREUR_TOKEN:
-
-            if(debugLEX) printf("ERREUR_TOKEN");
-
-            break;
+        exit(EXIT_FAILURE);
 
     }
 
-}
+    fl = fopen(argv[1], "r");
 
-//=================================== lexical================
+    nextToken();
 
+    if(main_program()){
 
-
-int estBlanc(char c) {
-
-    return isspace(c);
-
-}
-
-int is_underscore(){
-
-    return Car_Cour =='_';
-
-}
-
-int isAccentLettre(){
-
-    // if(-128<Car_Cour && Car_Cour <= -102){ // FROM Ç TO Ü
-
-    if(-96<= Car_Cour && Car_Cour <= -61 ){ //éèçàùûâêîô
-
-        return 1;
+        printf("YEEES\n");
 
     }
+
+    else
+
+        printf("NOOO\n");
+
+
+    if(debugSEM)
+        showTS();
+    
+    if(debugPSCODE)
+        showGenCode();
+
+    SavePCodeToFile(argv[2]);
+
+    fclose(fl);
 
     return 0;
 
 }
 
-void lire_Car(){
 
-    Car_Cour = getc(fl);
+
+
+
+// integer_type_definition -> range T_NUMERIC .. T_NUMERIC | mod expression
+
+
+
+// 9 - enumeration_type_definition ->'(' id [ , id]*  ')'
+
+
+
+boolean enumeration_type_definition(){
+
+    if(debugSYNT)
+        printf("enumeration_type_definition\n");
+
+    if(SYM_COUR.CODE == PO_TOKEN){
+
+        nextToken();
+
+        if(SYM_COUR.CODE == ID_TOKEN){
+
+            nextToken();
+
+            while(SYM_COUR.CODE == VIR_TOKEN){
+
+                nextToken();
+
+                if(SYM_COUR.CODE != ID_TOKEN){
+
+                    detectError(ID_ERR);
+                    return FALSE;
+
+                }
+
+                nextToken();
+
+            }
+
+            if(SYM_COUR.CODE == PF_TOKEN)
+
+                return TRUE;
+            
+            else
+                
+                detectError(PF_ERR);
+
+        }
+        else
+            detectError(ID_ERR);
+
+    }
+    else
+        detectError(PO_ERR);
+
+    return FALSE;
 
 }
 
-void lire_mot(){
 
-    int lonLex = 0;
 
-    SYM_COUR.NOM[lonLex++] = Car_Cour;
+//2_2 - multiple_id -> .id multiple_id | epsilon
 
-    lire_Car();
+//FIRST = (.);
 
-    while (isalpha(Car_Cour) || isdigit(Car_Cour) || is_underscore()) {
+//FOLLOW = USE ID PROCEDURE FUNCTION
 
-        SYM_COUR.NOM[lonLex++] = Car_Cour;
 
-        lire_Car();
+boolean multiple_id(){
+
+    if(debugSYNT)
+        printf("multiple_id\n");
+
+    boolean result = FALSE;
+
+    if (SYM_COUR.CODE == USE_TOKEN ||
+
+        SYM_COUR.CODE == WITH_TOKEN ||
+
+        SYM_COUR.CODE == PROCEDURE_TOKEN ||
+
+        SYM_COUR.CODE == FUNCTION_TOKEN ||
+        
+        SYM_COUR.CODE == VIR_TOKEN
+        ){
+
+        follow_token = TRUE;
+
+        result = TRUE;
+
+    }
+
+    else if(SYM_COUR.CODE == PT_TOKEN){
+
+        nextToken();
+
+        if(SYM_COUR.CODE == ID_TOKEN){
+
+            nextToken();
+
+            if(multiple_id()){
+
+                result = TRUE;
+
+            }
+
+        }
+        else
+            detectError(ID_ERR);
+
+    }
+    else
+        detectError(PT_ERR);
+    
+
+    return result;
+
+}
+
+
+
+//2_1 with_use_clause -> (use | with) id multiple_id {, id multiple_id}*
+
+
+
+boolean with_use_clause(){
+
+    if(debugSYNT)
+        printf("with_use_clause\n");
+
+    boolean result = FALSE;
+
+    if(SYM_COUR.CODE == USE_TOKEN ||
+
+        SYM_COUR.CODE == WITH_TOKEN){
+
+		nextToken();
+
+		if(SYM_COUR.CODE == ID_TOKEN){
+
+            nextToken();
+
+            if(multiple_id()){
+
+                nextToken();
+
+                while(SYM_COUR.CODE == VIR_TOKEN){
+                    
+                    nextToken();
+
+                    if(SYM_COUR.CODE == ID_TOKEN){
+
+                        nextToken();
+
+                        if(!multiple_id()){
+
+                            return FALSE;
+                        
+                        }
+                    }
+                    else{
+
+                        detectError(ID_ERR);
+                        return FALSE;
+                    }
+                }
+
+                follow_token = TRUE;
+
+                result = TRUE;
+
+            }
+
+        }
+        else
+            detectError(ID_ERR);
 
     }
 
 
 
-    if ( isAccentLettre() ) { //é à ...
+	return result;
 
-        while (isalpha(Car_Cour) || isdigit(Car_Cour) || isAccentLettre() || is_underscore()) {
+}
 
-            SYM_COUR.NOM[lonLex++] = Car_Cour;
 
-            lire_Car();
+
+//1_2 - list_with_use_clause -> with_use_clause list_with_use_clause | epsilon
+
+//FIRST = (use, with)
+
+//FOLLOW = (procedure, function)
+
+//VV
+
+boolean list_with_use_clause(){
+
+    if(debugSYNT)
+        printf("list_with_use_clause\n");
+
+    boolean result = FALSE;
+
+    if (SYM_COUR.CODE == PROCEDURE_TOKEN ||
+
+        SYM_COUR.CODE == FUNCTION_TOKEN){
+
+        follow_token = TRUE;
+
+        result = TRUE;
+
+    }
+
+    else if(with_use_clause()){
+
+        nextToken();
+
+        if(list_with_use_clause()){
+
+            result = TRUE;
 
         }
 
-        detectError(ERR_ID_INV);
+    }
 
-        SYM_COUR.CODE = ERREUR_TOKEN;
+    return result;
+
+}
+
+
+
+
+//8 - type_declaration -> type id is (enumeration_type_definition | integer_type_definition | real_type_definition | record_type_definition | array_type_definition);
+
+
+
+boolean type_declaration(){
+
+
+    if(debugSYNT)
+        printf("type_declaration\n");
+
+    if(SYM_COUR.CODE == TYPE_TOKEN){
+
+        nextToken();
+
+        if(SYM_COUR.CODE == ID_TOKEN){
+
+            nextToken();
+
+            if(SYM_COUR.CODE == IS_TOKEN){
+
+                nextToken();
+
+                if(SYM_COUR.CODE == PO_TOKEN){
+
+                    if(enumeration_type_definition()){
+
+                        nextToken();
+
+                        if(SYM_COUR.CODE == PV_TOKEN)
+
+                            return TRUE;
+
+                        else{
+                            
+                            detectError(PV_ERR);
+                            return FALSE;
+
+                        }
+
+                    }
+
+                }
+
+                if(SYM_COUR.CODE == RECORD_TOKEN){
+
+                    if(record_type_definition()){
+
+                        nextToken();
+
+                        if(SYM_COUR.CODE == PV_TOKEN)
+
+                            return TRUE;
+
+                        else{
+                            
+                            detectError(PV_ERR);
+                            return FALSE;
+
+                        }
+
+                    }
+
+                }
+
+                if(SYM_COUR.CODE == RANGE_TOKEN){
+
+                    if(integer_type_definition()){
+
+                        nextToken();
+
+                        if(SYM_COUR.CODE == PV_TOKEN)
+
+                            return TRUE;
+
+                        else{
+                            
+                            detectError(PV_ERR);
+                            return FALSE;
+
+                        }
+                    }
+
+                }
+
+                if(SYM_COUR.CODE == DIGITS_TOKEN){
+
+                    if(real_type_definition()){
+
+                        nextToken();
+
+                        if(SYM_COUR.CODE == PV_TOKEN)
+
+                            return TRUE;
+
+                        else{
+                            
+                            detectError(PV_ERR);
+                            return FALSE;
+
+                        }
+                    }
+
+                }
+
+                if(SYM_COUR.CODE == ARRAY_TOKEN){
+
+                    if(array_type_definition()){
+
+                        nextToken();
+
+                        if(SYM_COUR.CODE == PV_TOKEN)
+
+                            return TRUE;
+
+                        else{
+                            
+                            detectError(PV_ERR);
+                            return FALSE;
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+            else
+                detectError(IS_ERR);
+
+        }
+
+        else
+            detectError(ID_ERR);
 
     }
 
-    else if (lonLex <= 20) {
+    return FALSE;
 
-        // on cherche de symbole
+}
 
-        for(int i = 0; i<nbMotRes; i++){
 
-            if( ! strcasecmp(SYM_COUR.NOM, tabToken[i].NOM ) ){
 
-                SYM_COUR.CODE = tabToken[i].CODE;
+// 6 - parameter_specification -> id [, id]* : [in | out] id [:= expression]
 
-                break;
+
+
+boolean parameter_specification(){
+
+    if(debugSYNT)
+        printf("parameter_specification\n");
+
+    if(SYM_COUR.CODE == ID_TOKEN){
+
+        nextToken();
+
+        while(SYM_COUR.CODE == VIR_TOKEN){
+            nextToken();
+            if(SYM_COUR.CODE != ID_TOKEN){
+                detectError(ID_ERR);
+                return FALSE;
+            }
+            nextToken();
+        }
+
+        if(SYM_COUR.CODE == DOUBLE_POINT_TOKEN){
+
+            nextToken();
+
+            if(SYM_COUR.CODE == IN_TOKEN || SYM_COUR.CODE == OUT_TOKEN){
+
+                nextToken();
+
+            }
+
+            if(SYM_COUR.CODE == ID_TOKEN){
+
+                nextToken();
+
+                if(SYM_COUR.CODE == PV_TOKEN || SYM_COUR.CODE == PF_TOKEN){
+
+                    follow_token = TRUE;
+
+                    return TRUE;
+
+                }
+
+                if(SYM_COUR.CODE == DOUBLE_POINT_TOKEN){
+
+                    nextToken();
+
+                    if(SYM_COUR.CODE == EGAL_TOKEN){
+
+                        nextToken();
+
+                        if(expression())
+
+                            return TRUE;
+
+                    }
+                    else
+                        detectError(EGAL_ERR);
+
+                }
+                else
+                    detectError(DOUBLE_POINT_ERR);
+
+            }
+            else
+                detectError(ID_ERR);
+
+        }
+        else
+            detectError(DOUBLE_POINT_ERR);
+
+    }
+    else    
+        detectError(ID_ERR);
+
+    return FALSE;
+
+}
+
+// 5_2 other_parameter_specification -> ; parameter_specification other_parameter_specification | epsilon
+
+//FOLLOW )
+
+
+
+boolean other_parameter_specification(){
+
+    if(debugSYNT)
+        printf("other_parameter_specification\n");
+
+    if(SYM_COUR.CODE == PF_TOKEN){
+
+        follow_token = TRUE;
+
+        return TRUE;
+
+    }
+
+    if(SYM_COUR.CODE == PV_TOKEN){
+
+        nextToken();
+
+        if(parameter_specification()){
+
+            nextToken();
+
+            if(other_parameter_specification())
+
+                return TRUE;
+
+        }
+
+    }
+    else
+        detectError(PV_ERR);
+
+    return TRUE;
+
+}
+
+
+
+//5_1 - formal_part -> parameter_specification other_parameter_specification
+
+
+
+boolean formal_part(){
+
+    if(debugSYNT)
+        printf("formal_part\n");
+
+    if(parameter_specification()){
+
+        nextToken();
+
+
+        if(other_parameter_specification()){
+
+            return TRUE;
+
+        }
+
+    }
+
+    return FALSE;
+
+}
+
+
+
+
+
+// 8 - basic_declaration -> type_declaration | object_number_declaration | subprogram_body
+
+
+
+boolean basic_declaration(){
+
+    if(debugSYNT)
+        printf("basic_declaration\n");
+
+    
+    boolean result = FALSE;
+
+
+    if(SYM_COUR.CODE == PROCEDURE_TOKEN || SYM_COUR.CODE == FUNCTION_TOKEN){
+
+        if(subprogram_body())
+
+            return TRUE;
+    }
+
+    if(SYM_COUR.CODE == TYPE_TOKEN){
+
+        if(type_declaration()){
+
+            result = TRUE;
+
+        }
+
+    }
+
+    if(SYM_COUR.CODE == ID_TOKEN){
+
+        if(object_number_declaration()){
+
+            result = TRUE;
+
+        }
+
+    }
+
+    return result;
+
+}
+
+
+// 3_1 subprogram_body -> subprogram_specification is basic_declaration* begin sequence_statement end [id];
+
+//4 - subprogram_specification -> procedure id ['(' formal_part ')'] | function id ['(' formal_part ')'] return id
+
+
+boolean subprogram_body(){
+
+    if(debugSYNT)         printf("subprogram_body\n");
+
+    boolean drap = FALSE;
+
+    boolean result = FALSE;
+
+    char FUNC_NAME[100];
+
+    if(SYM_COUR.CODE == FUNCTION_TOKEN){
+
+        int curr_off;
+
+        nextToken();
+
+        if(SYM_COUR.CODE == ID_TOKEN){
+
+            insertIDFS(TFUNC);
+
+            strcpy(FUNC_NAME, SYM_COUR .NOM);
+
+            curr_off = OFFSET;
+
+            nextToken();
+
+            if(SYM_COUR.CODE == PO_TOKEN){
+
+                nextToken();
+
+                if(formal_part()){
+
+                    nextToken();
+
+                    if(SYM_COUR.CODE == PF_TOKEN){
+
+                        nextToken();
+
+                        if(SYM_COUR.CODE == RETURN_TOKEN){
+
+                            nextToken();
+
+                            if(SYM_COUR.CODE == ID_TOKEN){
+                                
+                                TAB_IDFS[curr_off] . TIDF = VariableType();
+
+                                drap = TRUE;
+
+                            }
+                            else detectError(ID_ERR);
+
+                        }
+                        else detectError(RETURN_ERR);
+
+                    }
+                    else detectError(PF_ERR);
+
+                }
 
             }
 
             else{
 
-                SYM_COUR.CODE = ID_TOKEN;
+                if(SYM_COUR.CODE == RETURN_TOKEN){
+
+                    nextToken();
+
+                    if(SYM_COUR.CODE == ID_TOKEN){
+
+                        TAB_IDFS[curr_off] . TIDF = VariableType();
+                        
+                        drap = TRUE;
+
+                    }
+                    else detectError(ID_ERR);
+
+                }
+                else detectError(RETURN_ERR);
 
             }
-
         }
+        else detectError(ID_ERR);
 
     }
 
     else{
 
-        detectError(ERR_ID_LONG);
 
-        SYM_COUR.CODE = ERREUR_TOKEN;
+        if(SYM_COUR.CODE == PROCEDURE_TOKEN){
+
+            nextToken();
+
+            if(SYM_COUR.CODE == ID_TOKEN){
+
+                insertIDFS(TPROC);
+
+                strcpy(FUNC_NAME, SYM_COUR . NOM);
+
+                TAB_IDFS[OFFSET] . TIDF = var_void;
+
+                nextToken();
+
+                if(SYM_COUR.CODE == PO_TOKEN){
+
+                    nextToken();
+
+                    if(formal_part()){
+
+                        nextToken();
+
+                        if(SYM_COUR.CODE == PF_TOKEN){
+
+                            drap = TRUE;
+
+                        }
+                        else detectError(PF_ERR);
+                    }
+
+                }
+
+                else{
+
+                    drap = TRUE;
+
+                    follow_token = TRUE;
+
+
+                }
+
+            }
+            else detectError(ID_ERR);
+        }
 
     }
 
-    //fin du mot
 
-    SYM_COUR.NOM[lonLex++] = '\0';
 
-    ungetc(Car_Cour, fl);
+    if(drap){
 
-    if(debugLEX)    
-        printf("Symcour --> %s ( ", SYM_COUR.NOM);
 
-    if(debugLEX) 
-        showCodeToken(SYM_COUR);
+        nextToken();
+
+        if(SYM_COUR.CODE == IS_TOKEN){
+
+            nextToken();
+
+            while (SYM_COUR.CODE == TYPE_TOKEN || SYM_COUR.CODE == ID_TOKEN || SYM_COUR.CODE == FUNCTION_TOKEN || SYM_COUR.CODE == PROCEDURE_TOKEN){
+
+                if(!basic_declaration()) return FALSE;
+                
+                nextToken();
+            }
+            
+
+            PCODE[0].MNE = INT;
+            PCODE[0].SUITE = OFFSET_VARIABE;
+
+            if(SYM_COUR.CODE == BEGIN_TOKEN){
+
+
+                nextToken();
+
+                if(sequence_statement()){
+
+                        nextToken();
+
+                        if(SYM_COUR.CODE == END_TOKEN){
+                            
+                            nextToken();
+
+                            if(SYM_COUR.CODE == PV_TOKEN){
+
+                                result = TRUE;
+
+                            }
+                            else{
+
+                                if(SYM_COUR.CODE == ID_TOKEN){
+
+                                    if(strcasecmp(SYM_COUR.NOM, FUNC_NAME) != 0) //error
+                                        detectError(FUNC_NAME_ERR);
+
+                                    nextToken();
+
+                                    if(SYM_COUR.CODE == PV_TOKEN){
+
+
+                                        return TRUE;
+                                    
+                                    }
+                                    else detectError(ID_ERR);
+
+                                }
+                                else detectError(ID_ERR);
+
+                            }
+
+                        }
+                        else detectError(END_ERR);
+
+                    }
+
+                }
+                else detectError(BEGIN_ERR);
+
+        }
+        else detectError(IS_ERR);
+
+    }
+
+
+
+    return result;
+
+}
+
+
+
+//10 - integer_type_definition -> range expression .. expression | mod expression
+
+
+
+boolean integer_type_definition(){
+
+    if(debugSYNT)         printf("integer_type_definition\n");
+
+
+    boolean result = FALSE;
+
+    if(SYM_COUR.CODE == RANGE_TOKEN){
+
+        nextToken();
+
+        if(expression()){
+
+            nextToken();
+
+            if(SYM_COUR.CODE == PT_TOKEN){
+
+                nextToken();
+
+                if(SYM_COUR.CODE == PT_TOKEN){
+
+                    nextToken();
+
+                    if(expression()){
+
+                        result = TRUE;
+
+                    }
+
+                }
+                else detectError(ID_ERR);
+
+            }
+            else detectError(DOUBLE_POINT_ERR);
+
+        }
+
+    }
+
+    else if(SYM_COUR.CODE == MOD_TOKEN){
+
+        nextToken();
+
+            if(expression())
+
+                result = TRUE;
+
+    }
+
+    return result;
+
+}
+
+
+
+
+
+//11 - real_type_definition -> digit expression [range expression .. expression]
+
+
+
+boolean real_type_definition(){if(debugSYNT)         printf("real_type_definition\n");
+
+    if(SYM_COUR.CODE == DIGITS_TOKEN){
+
+        nextToken();
+
+        if(expression()){
+
+            nextToken();
+
+            if(SYM_COUR.CODE == RANGE_TOKEN){
+
+                nextToken();
+
+                if(expression()){
+
+                    nextToken();
+
+                    if(SYM_COUR.CODE == PT_TOKEN){
+
+                        nextToken();
+
+                        if(SYM_COUR.CODE == PT_TOKEN){
+
+                            nextToken();
+
+                            if(expression()){
+
+                                return TRUE;
+
+                            }
+
+                        }
+                        else detectError(DOUBLE_POINT_ERR);
+
+                    }
+                    else detectError(DOUBLE_POINT_ERR);
+
+                }
+
+            }
+
+            else{
+
+                follow_token = TRUE;
+
+                return TRUE;
+
+            }
+
+        }
+
+    }
+
+    return FALSE;
+
+}
+
+
+
+//12 - array_type_definition -> array '(' id [range (<> | T_NUMERIC .. T_NUMERIC)] ')' of id
+
+
+
+boolean array_type_definition(){
     
-    if(debugLEX) puts(" )");
+    if(debugSYNT)         printf("array_type_definition\n");
 
+    if(SYM_COUR.CODE == ARRAY_TOKEN){
 
+        nextToken();
 
-}
+        if(SYM_COUR.CODE == PO_TOKEN){
 
-void lire_nombre(){
+            nextToken();
 
-    int lonLex = 0;
+            if(SYM_COUR.CODE == ID_TOKEN){
 
-    SYM_COUR.NOM[lonLex++] = Car_Cour;
+                nextToken();
 
-    lire_Car();
+                if(SYM_COUR.CODE == RANGE_TOKEN){
 
-    while ( isdigit(Car_Cour) ) {
+                    nextToken();
 
-        SYM_COUR.NOM[lonLex++] = Car_Cour;
+                    if(SYM_COUR.CODE == DIFF_TOKEN){
 
-        lire_Car();
+                        nextToken();
+
+                    }
+
+                    else if(expression()){
+
+                        nextToken();
+
+                        if(SYM_COUR.CODE == PT_TOKEN){
+
+                            nextToken();
+
+                            if(SYM_COUR.CODE == PT_TOKEN){
+
+                                nextToken();
+
+                                if(expression()){
+
+                                    nextToken();
+
+                                }
+
+                                else
+
+                                    return FALSE;
+
+                            }
+
+                            else{
+                                detectError(DOUBLE_POINT_ERR);
+                                return FALSE;
+                            }
+
+                        }
+
+                        else{
+                            detectError(DOUBLE_POINT_ERR);
+                            return FALSE;
+                        }
+                    }
+
+                    else
+
+                        return FALSE;
+
+                }
+
+                if(SYM_COUR.CODE == PF_TOKEN){
+
+                    nextToken();
+
+                    if(SYM_COUR.CODE == OF_TOKEN){
+
+                        nextToken();
+
+                        if(SYM_COUR.CODE == ID_TOKEN)
+
+                            return TRUE;
+                        
+                        else detectError(ID_ERR);
+
+                    }
+                    else detectError(OF_ERR);
+
+                }
+                else detectError(PF_ERR);
+
+            }
+            else detectError(ID_ERR);
+
+        }
+        else detectError(PO_ERR);
 
     }
 
-    SYM_COUR.CODE = NUM_TOKEN;
+    return FALSE;
 
-    if ( Car_Cour == '.') { // on switch vers la lecture d'un float
+}
 
-        SYM_COUR.NOM[lonLex++] = Car_Cour;
 
-        lire_Car();
 
-        if ( !isdigit(Car_Cour) ) {
+//record_type_definition -> null record; | record component_list end record
 
-            ungetc(Car_Cour, fl);
+boolean record_type_definition(){if(debugSYNT)         printf("record_type_definition\n");
 
-            SYM_COUR.NOM[lonLex - 1] = '\0';
+    if(SYM_COUR.CODE == NULL_TOKEN){
+
+        nextToken();
+
+        if(SYM_COUR.CODE == RECORD_TOKEN){
+
+            nextToken();
+
+            if(SYM_COUR.CODE == PV_TOKEN){
+
+                return TRUE;
+
+            }
+            else detectError(PV_ERR);
 
         }
+        else detectError(RECORD_ERR);
 
-        else{
+    }
 
-            SYM_COUR.CODE = FLOAT_TOKEN;
+    else{
 
-            while( isdigit(Car_Cour) ){
+        if(SYM_COUR.CODE == RECORD_TOKEN){
 
-                SYM_COUR.NOM[lonLex++] = Car_Cour;
+            nextToken();
 
-                lire_Car();
+            if(component_list()){
 
+                nextToken();
+
+                if(SYM_COUR.CODE == END_TOKEN){
+
+                    nextToken();
+
+                    if(SYM_COUR.CODE == RECORD_TOKEN){
+
+                        return TRUE;
+
+                    }
+                    else detectError(RECORD_ERR);
+
+                }
+                else detectError(END_ERR);
             }
 
         }
 
     }
 
-
-
-    if ( isalpha(Car_Cour) || isAccentLettre() || is_underscore() ) { // identificateur qui commence par des digits
-
-        while ( isalnum(Car_Cour) || isAccentLettre() || is_underscore() ) {
-
-            SYM_COUR.NOM[lonLex++] = Car_Cour;
-
-            lire_Car();
-
-        }
-
-        detectError(ERR_ID_INV);
-
-        SYM_COUR.CODE = ERREUR_TOKEN;
-
-    }
-
-    //fin du mot
-
-    SYM_COUR.NOM[lonLex++] = '\0';
-
-    ungetc(Car_Cour, fl);
-
-
-    if(debugLEX)   { 
-
-        printf("SC --> %s ( ", SYM_COUR.NOM);
-
-        showCodeToken(SYM_COUR);puts(" )");
-    }
+    return FALSE;
 
 }
 
-void lire_spcial(){
+// 14 - component_list -> component_item [component_item]* | null ;
+
+boolean component_list(){
+    
+    if(debugSYNT)         printf("component_list\n");
+
+    if(component_item()){
+
+        nextToken();
+
+        while(component_item()){
+
+            nextToken();
+
+        }
+
+        follow_token = TRUE;
+
+        return TRUE;
+
+    }
+
+    else{
+
+        if(SYM_COUR.CODE == NULL_TOKEN){
+
+            return TRUE;
+
+        }
+
+    }
+
+    return FALSE;
+
+}
 
 
 
-        switch( Car_Cour ){
+//15 - component_item -> id : id [:= expression] ; 
 
-            case ';':
+boolean component_item(){
+    
+    if(debugSYNT)         printf("component_item\n");
 
-                SYM_COUR.NOM[0] = ';';
+    if(SYM_COUR.CODE == ID_TOKEN){
 
-                SYM_COUR.NOM[1] = '\0';
+        nextToken();
 
-                SYM_COUR.CODE = PV_TOKEN;
+        if(SYM_COUR.CODE == DOUBLE_POINT_TOKEN){
 
-                break;
+            nextToken();
 
-            case '.':
+            if(SYM_COUR.CODE == ID_TOKEN){
 
-                SYM_COUR.NOM[0] = '.';
+                nextToken();
 
-                SYM_COUR.NOM[1] = '\0';
+                if(SYM_COUR.CODE == AFF_TOKEN){
 
-                SYM_COUR.CODE = PT_TOKEN;
+                    nextToken();
 
-                break;
+                    if(expression()){
 
-            case '+':
+                        nextToken();
+                        
+                        if(SYM_COUR.CODE == PV_TOKEN)
 
-                SYM_COUR.NOM[0] = '+';
-
-                SYM_COUR.NOM[1] = '\0';
-
-                SYM_COUR.CODE = PLUS_TOKEN;
-
-                break;
-
-            case '-':
-
-                SYM_COUR.NOM[0] = '-';
-
-                SYM_COUR.NOM[1] = '\0';
-
-                SYM_COUR.CODE = MOINS_TOKEN;
-
-                break;
-
-            case '*':
-
-                lire_Car();
-
-                if( Car_Cour == '='){
-
-                    SYM_COUR.NOM[0] = '*';
-
-                    SYM_COUR.NOM[1] = '=';
-
-                    // SYM_COUR.NOM[2] = '\0';
-
-                    SYM_COUR.CODE = MULT_AFFEC_TOKEN;
-
+                            return TRUE;
+                        
+                        else{
+                         
+                            detectError(PV_ERR);
+                         
+                            return FALSE;
+                        
+                        }
+                    }
                 }
 
                 else{
-
-                    SYM_COUR.NOM[0] = '*';
-
-                    SYM_COUR.CODE = MULT_TOKEN;
-
-                    ungetc(Car_Cour, fl);
-
+                    if(SYM_COUR.CODE == PV_TOKEN)
+                        return TRUE;
+                    else{
+                        detectError(PV_ERR);
+                        return FALSE;
+                    }
                 }
 
-                break;
+            }
+            else detectError(ID_ERR);
 
-            case '/':
+        }
+        else detectError(DOUBLE_POINT_ERR);
 
-                lire_Car();
+    }
 
-                if( Car_Cour == '='){
+    return FALSE;
 
-                    SYM_COUR.NOM[0] = '/';
+}
 
-                    SYM_COUR.NOM[1] = '=';
+//SEMANTIQUE
 
-                    // SYM_COUR.NOM[2] = '\0';
+TSYM VariableType(){
+    TSYM type;
 
-                    SYM_COUR.CODE = DIV_AFFEC_TOKEN;
+    if(strcasecmp(SYM_COUR.NOM, "Integer") == 0){
+        type = var_integer;
+    }
+    else if(strcasecmp(SYM_COUR.NOM, "Float") == 0){
+        type = var_float;
+    }
+    else if(strcasecmp(SYM_COUR.NOM, "Boolean") == 0){
+        type = var_boolean;
+    }
+    else if(strcasecmp(SYM_COUR.NOM, "String") == 0){
+        type = var_string;
+    }
+    else if(strcasecmp(SYM_COUR.NOM, "Char") == 0){
+        type = var_char;
+    }
+    else{
+        // ERROR TO GENERATE;
+    }
+    if(debugSEM)
+        showTS(); 
+    
+    return type;
+}
 
+
+//16 - object_number_declaration -> id [,id]* : (
+//                                          (id [:= expression] | 
+//                                          constant id := expression)
+//                                              )       ;
+//SYNTAXIQUE
+boolean object_number_declaration(){
+    
+    if(debugSYNT)         printf("object_number_declaration\n");
+
+    int curr_off = OFFSET;
+
+    if(SYM_COUR.CODE == ID_TOKEN){
+
+        insertIDFS(TVAR);
+
+        GENERER2(LDA, TAB_IDFS[OFFSET].ADRESSE);
+        
+        nextToken();
+
+        while(SYM_COUR.CODE == VIR_TOKEN){
+
+            nextToken();
+
+            if(SYM_COUR.CODE != ID_TOKEN){
+
+                return FALSE;
+
+            }
+
+            insertIDFS(TVAR);
+
+            GENERER2(LDA, TAB_IDFS[OFFSET].ADRESSE);
+
+            nextToken();
+
+        }
+
+        if(SYM_COUR.CODE == DOUBLE_POINT_TOKEN){
+
+            nextToken();
+
+            if(SYM_COUR.CODE == CONSTANT_TOKEN){
+
+                for(int i = curr_off + 1; i <= OFFSET; i++){
+                    
+                    TAB_IDFS[i] . NIDF = TCONST;
+                
                 }
 
+                nextToken();
+
+                if(SYM_COUR.CODE == ID_TOKEN){ // VARIABLE TYPE
+                    
+                    for(int i = curr_off + 1; i <= OFFSET; i++){
+                    
+                        TAB_IDFS[i] . TIDF  = VariableType();
+                
+                    }
+                    
+                    nextToken();
+
+                    if(SYM_COUR.CODE == AFF_TOKEN){
+
+                        nextToken();
+
+                        if(expression()){
+
+                            GENERER1(STO);
+
+                            nextToken();
+
+                            if(SYM_COUR.CODE == PV_TOKEN)
+                                
+                                return TRUE;
+
+                        }
+
+                    }
+                }
+
+            }
+            else if(SYM_COUR.CODE == ID_TOKEN){ // variable type
+
+        
+                for(int i = curr_off + 1; i <= OFFSET; i++){
+
+                    TAB_IDFS[i] . TIDF  = VariableType();
+                
+                }
+
+                if(debugSEM)
+                    showTS(); 
+
+                nextToken();
+
+                if(SYM_COUR.CODE == AFF_TOKEN){
+
+                    nextToken();
+
+                    if(expression()){
+
+                        GENERER1(STO);
+
+                        nextToken();
+
+                        if(SYM_COUR.CODE == PV_TOKEN)
+
+                            return TRUE;
+
+                    }
+
+                }
                 else{
+                    if(SYM_COUR.CODE == PV_TOKEN){
 
-                    SYM_COUR.NOM[0] = '/';
+                        GENERER2(LDI, 0);
+                        GENERER1(STO);
 
-                    SYM_COUR.CODE = DIV_TOKEN;
+                        return TRUE;
+                    }
+                }
+            }
 
-                    ungetc(Car_Cour, fl);
+        }
+
+    }
+
+    return FALSE;
+
+}
+
+
+
+// 17 - sequence_statement -> statement {statement}*
+//SYNTAXIQUE
+boolean sequence_statement(){
+    
+    if(debugSYNT)         printf("sequence_statement\n");
+
+    if(SYM_COUR.CODE == END_TOKEN){
+        return TRUE;
+    }
+
+    if(statement()){
+
+        nextToken();
+
+        while(SYM_COUR.CODE == IF_TOKEN ||SYM_COUR.CODE == CASE_TOKEN ||SYM_COUR.CODE == WHILE_TOKEN ||SYM_COUR.CODE == FOR_TOKEN ||SYM_COUR.CODE == LOOP_TOKEN ||SYM_COUR.CODE == DECLARE_TOKEN ||SYM_COUR.CODE == BEGIN_TOKEN ||SYM_COUR.CODE == NULL_TOKEN ||SYM_COUR.CODE == RETURN_TOKEN ||SYM_COUR.CODE == EXIT_TOKEN ||SYM_COUR.CODE == GOTO_TOKEN ||SYM_COUR.CODE == ID_TOKEN ||SYM_COUR.CODE == PRINT_TOKEN ||SYM_COUR.CODE == READ_TOKEN){
+            if(!statement())
+                return FALSE;
+            nextToken();
+        }
+
+        follow_token = TRUE;
+
+        return TRUE;
+
+    }
+
+    return FALSE;
+
+}
+
+
+
+//18 - statement -> simple_statement | compound_statement
+//SYNTAXIQUE
+boolean statement(){
+    
+    if(debugSYNT)         printf("statement\n");
+
+    if(SYM_COUR.CODE == IF_TOKEN || SYM_COUR.CODE == CASE_TOKEN || SYM_COUR.CODE == WHILE_TOKEN ||  SYM_COUR.CODE == FOR_TOKEN ||
+
+        SYM_COUR.CODE == LOOP_TOKEN || SYM_COUR.CODE == DECLARE_TOKEN || SYM_COUR.CODE == BEGIN_TOKEN){
+        
+        boolean drap = compound_statement();
+        return drap;
+
+    }
+    return simple_statement();
+
+}
+
+
+
+//19 - simple_statement ::= null_statement | procedure_call_or_assign_statement | exit_statement | goto_statement | return_statement
+//SYNTAXIQUE
+boolean simple_statement(){
+    
+    if(debugSYNT)         printf("simple_statement\n");
+
+    //null_statement
+
+    if(SYM_COUR.CODE == NULL_TOKEN){
+
+        return TRUE;
+
+    }
+
+    //procedure_call_or_assign_statement
+
+    if(SYM_COUR.CODE == ID_TOKEN){
+
+        return procedure_call_or_assign_statement();
+
+    }
+    
+    //print
+
+    if(SYM_COUR.CODE == PRINT_TOKEN){
+        
+        return print();
+
+    }
+
+    //read
+    if(SYM_COUR.CODE == READ_TOKEN){
+        return read();
+
+    }
+
+    //exit_statement
+
+    if(SYM_COUR.CODE == EXIT_TOKEN){
+
+        return exit_statement();
+
+    }
+
+    //goto_statement
+
+    if(SYM_COUR.CODE == GOTO_TOKEN){
+
+        return goto_statement();
+
+    }
+
+    //return
+
+    if(SYM_COUR.CODE == RETURN_TOKEN){
+
+        return return_statement();
+
+    }
+
+    return FALSE;
+
+}
+
+
+
+//20 - null_statement -> null ;
+//SYNTAXIQUE
+boolean null_statement(){if(debugSYNT)         printf("null_statement\n");
+
+    if(SYM_COUR.CODE == NULL_TOKEN){
+
+        nextToken();
+
+        if(SYM_COUR.CODE == PV_TOKEN)
+
+            return TRUE;
+        
+        else detectError(PV_ERR);
+    }
+
+    return FALSE;
+
+}
+
+
+
+//21 - exit_statement -> exit [id] [when expression];
+//SYNTAXIQUE
+boolean exit_statement(){if(debugSYNT)         printf("exit_statement\n");
+
+    if(SYM_COUR.CODE == EXIT_TOKEN){
+
+        nextToken();
+
+        if(SYM_COUR.CODE == ID_TOKEN){
+
+            nextToken();
+
+            if(SYM_COUR.CODE == WHEN_TOKEN){
+
+                nextToken();
+
+                if(expression()){
+
+                    nextToken();
+
+                    if(SYM_COUR.CODE == PV_TOKEN){
+
+                        return TRUE;
+
+                    }
+                    else detectError(PV_ERR);
+                }
+            }
+
+            else{
+                if(SYM_COUR.CODE == PV_TOKEN){
+
+                        return TRUE;
+
+                }
+                else detectError(PV_ERR);
+            }
+        }
+
+        else if(SYM_COUR.CODE == WHEN_TOKEN){
+
+                nextToken();
+
+                if(expression()){
+
+                    nextToken();
+
+                    if(SYM_COUR.CODE == PV_TOKEN){
+
+                        return TRUE;
+
+                    }
+                    else detectError(PV_ERR);
+                }
+
+            }
+
+        else if(SYM_COUR.CODE == PV_TOKEN){
+
+                        return TRUE;
+
+        }
+        else detectError(PV_ERR);
+
+    }
+
+    return FALSE;
+
+}
+
+
+
+//22- goto_statement -> goto id;
+//SYNTAXIQUE
+boolean goto_statement(){
+    
+    if(debugSYNT)         printf("goto_statement\n");
+
+    if(SYM_COUR.CODE == GOTO_TOKEN){
+
+        nextToken();
+
+        if(SYM_COUR.CODE == ID_TOKEN)
+
+            return TRUE;
+
+    }
+
+    return FALSE;
+
+}
+
+
+
+// 23 - procedure_call_or_assign_statement -> id ('(' params ')' | := expression) ;
+
+boolean procedure_call_or_assign_statement(){
+    
+    if(debugSYNT)         
+        printf("procedure_call_or_assign_statement\n");
+    
+
+    char currIDF[100];
+
+    strcpy(currIDF, SYM_COUR.NOM);
+
+    if(SYM_COUR.CODE == ID_TOKEN){
+
+        nextToken();
+
+        if(SYM_COUR.CODE == PO_TOKEN){
+            
+            int indice = verifIDexist(TPROC, currIDF);
+
+            nextToken();
+
+            if(params()){
+
+                nextToken();
+
+                if(strcmp(SYM_COUR.NOM, ")") == 0){
+
+                    nextToken();
+
+                    if(SYM_COUR.CODE == PV_TOKEN)
+
+                        return TRUE;
+
+                    else detectError(PV_ERR);
 
                 }
 
-                break;
+            }
 
-            case ',':
+        }
 
-                SYM_COUR.NOM[0] = ',';
+        else{
 
-                SYM_COUR.NOM[1] = '\0';
+            //affectation
 
-                SYM_COUR.CODE = VIR_TOKEN;
+            if(SYM_COUR.CODE == AFF_TOKEN){
 
-                break;
+                int indice = verifIDexist(TVAR, currIDF);
 
-            case '(':
+                GENERER2(LDA, TAB_IDFS[indice].ADRESSE);
 
-                SYM_COUR.NOM[0] = '(';
+                nextToken();
+                
+                if(expression()){
 
-                SYM_COUR.NOM[1] = '\0';
+                    GENERER1(STO);
 
-                SYM_COUR.CODE = PO_TOKEN;
+                    nextToken();
 
-                break;
 
-            case ')':
+                    if(SYM_COUR.CODE == PV_TOKEN){
 
-                SYM_COUR.NOM[0] = ')';
+                        return TRUE;
 
-                SYM_COUR.NOM[1] = '\0';
+                    }
 
-                SYM_COUR.CODE = PF_TOKEN;
-
-                break;
-
-            case '\'':
-
-                SYM_COUR.NOM[0] = '\'';
-
-                SYM_COUR.NOM[1] = '\0';
-
-                SYM_COUR.CODE = APP_TOKEN;
-
-                break;
-
-            case '"':
-
-                SYM_COUR.NOM[0] = '"';
-
-                SYM_COUR.NOM[1] = '\0';
-
-                SYM_COUR.CODE = DOUBLE_QUOTES_TOKEN;
-
-                break;
-
-            case ':':
-
-                lire_Car();
-
-                if( Car_Cour == '='){
-
-                    SYM_COUR.NOM[0] = ':';
-
-                    SYM_COUR.NOM[1] = '=';
-
-                    // SYM_COUR.NOM[2] = '\0';
-
-                    SYM_COUR.CODE = AFF_TOKEN;
+                    else detectError(PV_ERR);
 
                 }
 
+            }
+            else detectError(PO_ERR);
+        }
+
+    }
+    else detectError(ID_ERR);
+
+    return FALSE;
+
+}
+
+boolean char_func(){
+    
+    if(debugSYNT)         printf("char_func\n");
+    if(SYM_COUR.CODE == APP_TOKEN){
+        nextToken();
+        if(SYM_COUR.CODE != APP_TOKEN && strlen(SYM_COUR.NOM) == 1)
+            nextToken();
+        else{
+            return FALSE;
+        }
+        if(SYM_COUR.CODE == APP_TOKEN)
+            return TRUE;
+        else detectError(APP_ERR);
+        
+    }
+
+    return FALSE;
+}
+
+boolean string_func(){
+    
+    if(debugSYNT)         printf(" string_func\n");
+        
+    if(SYM_COUR.CODE == DOUBLE_QUOTES_TOKEN){
+
+        nextToken();
+        
+        while(SYM_COUR.CODE != DOUBLE_QUOTES_TOKEN)
+        
+            nextToken();
+        
+        if(SYM_COUR.CODE == DOUBLE_QUOTES_TOKEN)
+        
+            return TRUE;
+        
+        else detectError(DOUBLE_QUOTES_ERR);
+    
+    }
+
+    return FALSE;
+}
+
+
+
+// 24 - params -> (expression | string_func | char_func) {, params}*
+
+boolean params(){
+    
+    if(debugSYNT)         printf("params\n");
+
+    if(strcmp(SYM_COUR.NOM, ")") == 0){
+        follow_token = TRUE;
+        return TRUE;
+    }
+    
+    
+    if(SYM_COUR.CODE == DOUBLE_QUOTES_TOKEN){
+        
+        if(string_func()){
+        
+            nextToken();
+
+            while(SYM_COUR.CODE == VIR_TOKEN){
+
+                nextToken();
+
+                if(! params()){
+
+                    return FALSE;
+
+                }
+
+
+                nextToken();
+
+
+            }
+
+            follow_token = TRUE;
+
+            return TRUE;
+        }
+    }
+    if(SYM_COUR.CODE == APP_TOKEN){
+        
+        if(char_func()){
+        
+            nextToken();
+
+            while(SYM_COUR.CODE == VIR_TOKEN){
+
+                nextToken();
+
+                if(! params()){
+
+                    return FALSE;
+
+                }
+
+                nextToken();
+
+            }
+
+            follow_token = TRUE;
+
+            return TRUE;
+        }
+    }
+    if(expression()){
+
+        nextToken();
+
+        while(strcmp(SYM_COUR.NOM, ",") == 0){
+
+            nextToken();
+
+            if(! params()){
+
+                return FALSE;
+
+            }
+
+            nextToken();
+
+        }
+
+        follow_token = TRUE;
+
+        return TRUE;
+
+    }
+
+    return FALSE;;
+
+}
+
+
+
+//25 - return_statement -> return [expression] ;
+
+
+
+boolean return_statement(){
+    
+    if(debugSYNT)         printf("return_statement\n");
+
+    if(SYM_COUR.CODE == RETURN_TOKEN){
+
+        nextToken();
+
+        if(SYM_COUR.CODE == PV_TOKEN)
+
+            return TRUE;
+
+        if(expression()){
+
+            nextToken();
+
+            if(SYM_COUR.CODE == PV_TOKEN)
+
+                return TRUE;
+
+            else detectError(PV_ERR);
+
+        }
+
+    }
+
+    return FALSE;
+
+}
+
+
+
+//26 - compound_statement ::= if_statement | case_statement | loop_statement | block_statement
+
+
+
+boolean compound_statement(){
+    
+    if(debugSYNT)         printf("compound_statement\n");
+
+    if(SYM_COUR.CODE == IF_TOKEN){
+
+        return if_statement();
+
+    }
+
+    else if(SYM_COUR.CODE == CASE_TOKEN){
+
+        return case_statement();
+
+    }
+
+    else if(SYM_COUR.CODE == WHILE_TOKEN || SYM_COUR.CODE == FOR_TOKEN || SYM_COUR.CODE == LOOP_TOKEN){
+
+        return loop_statement();
+
+    }
+    
+    if(SYM_COUR.CODE == DECLARE_TOKEN || SYM_COUR.CODE == BEGIN_TOKEN ){
+        boolean drap = block_statement();
+        return drap;
+    }
+
+    return FALSE;
+
+}
+
+
+
+//27 - if_statement -> if expression then sequence_statement [elsif expression then sequence_statement]* [else sequence_statement] end if;
+
+
+
+boolean if_statement(){
+    
+    if(debugSYNT)         printf("if_statement\n");
+
+
+    int Indices[100];
+    int len = 0;
+
+    if(SYM_COUR.CODE == IF_TOKEN){
+
+        nextToken();
+
+        if(expression()){
+
+            GENERER1(BZE);
+
+            int ind_BZE = PC;
+            
+            nextToken();
+
+            if(SYM_COUR.CODE == THEN_TOKEN){
+
+                nextToken();
+
+                if(sequence_statement()){
+
+                    GENERER1(BRN);
+
+                    Indices[len++] = PC + 1;
+
+                    PCODE[ind_BZE].SUITE = PC + 1;
+                                    
+                    nextToken();
+
+                    while(SYM_COUR.CODE == ELSIF_TOKEN){
+            
+                        nextToken();
+
+                        if(expression()){
+
+                        GENERER1(BZE);
+                        
+                        int ind_BZE1 = PC;
+
+                            nextToken();
+
+                            if(SYM_COUR.CODE == THEN_TOKEN){
+
+                                nextToken();
+
+                                if(sequence_statement()){
+
+                                    GENERER1(BRN);
+
+                                    Indices[len++] = PC + 1;
+
+                                    PCODE[ind_BZE1].SUITE = PC + 1;
+
+                                    nextToken();
+                                
+                                }
+
+                                else
+
+                                    return FALSE;
+
+                            }
+
+                            else{
+                                detectError(THEN_ERR);
+                                return FALSE;
+                            }
+
+                        }
+
+                        else
+
+                            return FALSE;
+
+                    }
+
+                    //SYM_COUR contains already the follow token. so, no need to call nextToken
+
+                    if(SYM_COUR.CODE == ELSE_TOKEN){
+
+                        nextToken();
+
+                        if(sequence_statement()){
+
+                            nextToken();
+
+                        }
+
+                        else
+
+                            return FALSE;
+
+                    }
+
+                    if(SYM_COUR.CODE == END_TOKEN){
+
+                        nextToken();
+
+                        if(SYM_COUR.CODE == IF_TOKEN){
+
+                            nextToken();
+
+                            if(SYM_COUR.CODE == PV_TOKEN){
+                                
+                                for(int i = 0; i < len; i++){
+
+                                    PCODE[Indices[i] - 1] . SUITE = PC + 1;
+                                    
+                                }
+                                return TRUE;
+
+                            }
+                            else detectError(PV_ERR);
+
+                        }
+                        else detectError(IF_ERR);
+
+                    }
+                    else detectError(END_ERR);
+
+                }
+
+            }
+            else detectError(THEN_ERR);
+
+        }
+
+    }
+
+    return FALSE;
+
+}
+
+
+
+
+
+// 28 - case_statement -> case expression is case_statement_alt {case_statement_alt}* end case;
+
+
+
+boolean case_statement(){
+    
+    if(debugSYNT)         printf("case_statement\n");
+
+    first = TRUE;
+
+    if(SYM_COUR.CODE == CASE_TOKEN) {
+
+        nextToken();
+
+        if(expression()){
+
+            last_INDO = last_IND;
+
+            nextToken();
+
+            if(SYM_COUR.CODE == IS_TOKEN){
+
+                nextToken();
+
+                if(case_statement_alt()){
+
+                    nextToken();
+
+                    first = FALSE;
+
+                    while(SYM_COUR.CODE == WHEN_TOKEN){ 
+
+                        case_statement_alt();
+
+                        nextToken();
+
+                    }
+
+                    if(SYM_COUR.CODE == OTHERS_TOKEN){
+                        
+                        nextToken();
+
+                        if(!sequence_statement())
+
+                            return FALSE;
+
+                        nextToken();
+                    }
+
+                    if(SYM_COUR.CODE == END_TOKEN){
+
+                        nextToken();
+
+                        if(SYM_COUR.CODE == CASE_TOKEN){
+
+                            nextToken();
+
+                            if(SYM_COUR.CODE == PV_TOKEN){
+
+                                return TRUE;
+
+                            }
+                            else detectError(PV_ERR);
+
+                        }
+                        else detectError(CASE_ERR);
+
+                    }
+                    else detectError(END_ERR);
+
+                }
+
+            }
+            else detectError(IS_ERR);
+
+        }
+
+    }
+
+    return FALSE;
+
+}
+
+
+
+// 29 - case_statement_alt -> when Simple_expression => sequence_statement
+
+
+
+boolean case_statement_alt(){
+    
+    if(debugSYNT)         printf("case_statement_alt\n");
+
+    if(SYM_COUR.CODE == WHEN_TOKEN){
+
+        nextToken();
+        
+        if(SYM_COUR.CODE == PLUS_TOKEN || SYM_COUR.CODE == MOINS_TOKEN || SYM_COUR.CODE == NULL_TOKEN || SYM_COUR.CODE == STRING_TOKEN || SYM_COUR.CODE == ID_TOKEN || SYM_COUR.CODE == NUM_TOKEN || SYM_COUR.CODE == PO_TOKEN){
+                
+                if(!first){
+
+                    GENERER2(LDA, TAB_IDFS[last_INDO].ADRESSE);
+                    
+                    GENERER1(LDV);
+                }
+
+            if(simple_expression()){
+
+
+                GENERER1(EQL);
+
+                GENERER1(BZE);
+                
+                int id = PC;
+                
+                nextToken();
+
+                if(SYM_COUR.CODE == EGAL_TOKEN){
+
+                    nextToken();
+
+                    if(SYM_COUR.CODE == SUP_TOKEN){
+
+                        nextToken();
+
+                        if(sequence_statement()){
+
+                            PCODE[id].SUITE = PC + 1;
+
+                            return TRUE;
+
+                        }
+
+                    }
+                    else detectError(SUP_ERR);
+
+                }
+                else detectError(EGAL_ERR);
+
+            // TODO Others
+
+            }
+
+        }
+
+
+
+  }
+
+   return FALSE;
+
+}
+
+
+
+// 30 -  loop_statement -> [(while expression
+
+//                              |
+
+//                          for id in [reverse] simple_expression .. simple_expression)]
+
+//      loop sequence_statement end loop;
+
+
+
+boolean loop_statement(){
+
+    boolean drapFOR = FALSE;
+    boolean drap = FALSE;
+    
+    if(debugSYNT)         printf("loop_statement\n");
+
+    int ind_BZE = 0;
+
+    int LABEL_BRN = 0;
+
+    int index = 0;
+
+    int ind_br = 0;
+
+    int ind_bn = 0;
+
+    if(SYM_COUR.CODE == WHILE_TOKEN){
+
+        LABEL_BRN = PC + 1;
+
+        nextToken();
+
+        if(!expression())
+
+            return FALSE;
+        
+        GENERER1(BZE);
+        
+        ind_BZE = PC;
+
+    }
+
+    else if(SYM_COUR.CODE == FOR_TOKEN){
+
+        drapFOR = TRUE;
+
+        nextToken();
+
+        if(SYM_COUR.CODE == ID_TOKEN){
+
+            index = verifIDexist(TVAR, SYM_COUR.NOM);
+
+            nextToken();
+
+            if(SYM_COUR.CODE == IN_TOKEN){
+
+                nextToken();
+
+                if(SYM_COUR.CODE == REVERSE_TOKEN){
+
+                    drap = TRUE;
+
+                    nextToken();
+
+                }
+
+                ind_bn = PC + 1;
+
+                GENERER2(LDA, TAB_IDFS[index].ADRESSE);
+                
+                GENERER1(LDV);
+
+                if(simple_expression()){
+
+                    if(!drap)
+                        GENERER1(GEQ);
+                    else
+                        GENERER1(LEQ);
+
+                    nextToken();
+
+                    if(SYM_COUR.CODE == PT_TOKEN){
+
+                        nextToken();
+
+                        if(SYM_COUR.CODE == PT_TOKEN){
+
+                            nextToken();
+
+                            GENERER2(LDA, TAB_IDFS[index].ADRESSE);
+            
+                            GENERER1(LDV);
+
+                            if(!simple_expression())
+
+                                return FALSE;
+
+                            else{
+
+                                if(!drap)
+                                
+                                    GENERER1(LEQ);
+                                
+                                else
+                                
+                                    GENERER1(GEQ);
+
+                                GENERER1(AND);
+
+                                GENERER1(BZE);
+
+                                ind_br = PC + 1;
+                            }
+                        }
+
+                        else{
+
+                            detectError(PO_ERR);
+                            return FALSE;
+                    
+                        }
+
+                    }
+
+                    else{
+
+                        detectError(PO_ERR);
+                        return FALSE;
+                    
+                    }
+                }
+
+                else
+
+                    return FALSE;
+
+            }
+
+            else{
+
+                detectError(IN_ERR);
+                return FALSE;
+            
+            }
+        }
+
+        else{
+
+            detectError(ID_ERR);
+            return FALSE;
+
+        }
+
+    }
+
+    nextToken();
+
+    if(SYM_COUR.CODE == LOOP_TOKEN){
+
+        nextToken();
+
+        if(sequence_statement()){
+
+            if(!drapFOR){
+                
+                GENERER2(BRN, LABEL_BRN);
+
+                PCODE[ind_BZE] . SUITE = PC + 1;
+            }
+
+            nextToken();
+
+            if(drapFOR){
+
+                GENERER2(LDA, TAB_IDFS[index].ADRESSE);
+
+                GENERER2(LDA, TAB_IDFS[index].ADRESSE);
+
+                GENERER1(LDV);
+
+                GENERER2(LDI, drap?-1:1);
+
+                GENERER1(ADD);
+
+                GENERER1(STO);
+
+                GENERER2(BRN, ind_bn);
+
+                PCODE[ind_br - 1].SUITE = PC + 1;
+            }
+
+            if(SYM_COUR.CODE == END_TOKEN){
+
+                nextToken();
+
+                if(SYM_COUR.CODE == LOOP_TOKEN){
+
+                    nextToken();
+
+                    if(SYM_COUR.CODE == PV_TOKEN)
+
+                        return TRUE;
+                    
+                    else detectError(PV_ERR);
+
+                }
+                else detectError(LOOP_ERR);
+
+            }
+            else detectError(END_ERR);
+
+        }
+
+    }
+    else detectError(LOOP_ERR);
+
+    return FALSE;
+
+}
+
+
+//31 - block_statement -> [declare (basic_declaration)*]
+
+//                   begin
+
+//                      sequence_statement
+
+//                    end;
+
+
+
+boolean block_statement(){
+    
+    if(debugSYNT)         printf("block_statement\n");
+
+
+    if(SYM_COUR.CODE == DECLARE_TOKEN){
+
+        nextToken();
+
+        while(SYM_COUR.CODE == TYPE_TOKEN || SYM_COUR.CODE == ID_TOKEN ){
+
+            if(!basic_declaration()) return FALSE;
+
+            nextToken();
+
+        }
+
+    }
+
+    if( SYM_COUR.CODE == BEGIN_TOKEN){
+
+
+        nextToken();
+
+        if(sequence_statement()){
+
+            nextToken();
+
+            if( SYM_COUR.CODE == END_TOKEN){
+
+                nextToken();
+
+
+                if( SYM_COUR.CODE == PV_TOKEN){
+
+                    return TRUE;
+
+                }
                 else{
-
-                    SYM_COUR.NOM[0] = ':';
-
-                    SYM_COUR.CODE = DOUBLE_POINT_TOKEN;
-
+                    detectError(PV_ERR);
+                    return FALSE;
                 }
 
-                break;
+            }
+            else detectError(END_ERR);
 
-            case '<':
+        }
 
-                lire_Car();
+    }
 
-                if( Car_Cour == '='){ // inferieur ou egal
+    else detectError(BEGIN_ERR);
 
-                    SYM_COUR.NOM[0] = '<';
+    return FALSE;
 
-                    SYM_COUR.NOM[1] = '=';
+}
 
-                    // SYM_COUR.NOM[2] = '\0';
 
-                    SYM_COUR.CODE = INFEG_TOKEN;
 
-                }else if( Car_Cour == '>'){ // different
+// 32 - expression -> relation [(and| or | xor) relation]*
 
-                    SYM_COUR.NOM[0] = '<';
+boolean expression(){
+    
+    if(debugSYNT)         printf("expression\n");
 
-                    SYM_COUR.NOM[1] = '>';
+    if( relation()) {
 
-                    // SYM_COUR.NOM[2] = '\0';
+        nextToken();
 
-                    SYM_COUR.CODE = DIFF_TOKEN;
+        while( SYM_COUR.CODE == AND_TOKEN || SYM_COUR.CODE == OR_TOKEN || SYM_COUR.CODE == XOR_TOKEN ){
 
-                }
+            Token temp = SYM_COUR;
 
-                else{ // inferieur strictement + caractere lu de plus
+            nextToken();
 
-                    SYM_COUR.NOM[0] = '<';
+            if( !relation()) return FALSE;
 
-                    // SYM_COUR.NOM[1] = '\0';
-
-                    SYM_COUR.CODE = INF_TOKEN;
-
-                    //on a lu un caractere de plus
-
-                    ungetc(Car_Cour, fl);
-
-                }
-
-                break;
-
-            case '>':
-
-                lire_Car();
-
-                if( Car_Cour == '='){ // superieur ou egal
-
-                    SYM_COUR.NOM[0] = '>';
-
-                    SYM_COUR.NOM[1] = '=';
-
-                    // SYM_COUR.NOM[2] = '\0';
-
-                    SYM_COUR.CODE = SUPEG_TOKEN;
-
-                }
-
-                else{ // superieur strictement + caractere lu de plus
-
-                    SYM_COUR.NOM[0] = '>';
-
-                    // SYM_COUR.NOM[1] = '\0';
-
-                    SYM_COUR.CODE = SUP_TOKEN;
-
-                    //on a lu un caractere de plus
-
-                    ungetc(Car_Cour, fl);
-
-                }
-
-                break;
-
-                case '=':
-
-                    SYM_COUR.NOM[0] = '=';
-
-                    SYM_COUR.NOM[1] = '\0';
-
-                    SYM_COUR.CODE = EGAL_TOKEN;
-
-                break;
-
-                case EOF :
-
-                    SYM_COUR.CODE = FIN_TOKEN;
-
+            switch((int)temp . CODE){
+                case(AND_TOKEN) : {
+                    GENERER1(AND);
                     break;
-
-            default :
-
-                detectError(ERR_CAR_INC);
-
-                SYM_COUR.CODE = ERREUR_TOKEN;
-
-                return;
-
-        }
-
-        if(debugLEX) {printf("Symcour --> %s ( ", SYM_COUR.NOM);
-
-        showCodeToken(SYM_COUR);puts(" )");
-        }
-
-}
-
-void lire_commentaire(void ){
-
-    while( Car_Cour == '-'){
-
-        lire_Car();
-
-
-        if( Car_Cour == '-'){
-            
-            lire_Car();
-            
-            while(Car_Cour != '\n'){
-            
-                lire_Car();
+                }
+                case(OR_TOKEN) : {
+                    GENERER1(OR);
+                    break;
+                }
+                case(XOR_TOKEN) : {
+                    GENERER1(XOR);
+                    break;
+                }
             }
-            lire_Car();
 
-            while (estBlanc(Car_Cour))
+            nextToken();
 
-                lire_Car();
         }
-        else{
-            char c = Car_Cour;
-            if(debugLEX)
-                printf("<%c>\n", c);
-            fputc(Car_Cour, fl);
-            Car_Cour = '-';
-            return;
-        }
-    }
-}
 
-void detectError( Erreurs_t er){
+        follow_token = TRUE;
 
-    int i = 0;
+        return TRUE;
 
-    for(; i < tailleERR; i++){
-        if(er == MES_ERR[i].CODE_ERR)
-            break;
     }
 
-    printf("erreur %s\n", MES_ERR[i].mes);
-
-    //exit(EXIT_FAILURE);
+    return FALSE;
 
 }
 
-void nextToken(void) {
 
-    if(follow_token){
 
-        follow_token = FALSE;
-        SYM_COUR.CODE = LAST;
-        return;
+// 33 - relation -> simple_expression [     ( = | *= | /= | < | <= | > |>= )  simple_expression
+
+//                                      |
+
+                    //                      (not | in) NUM_TOKEN .. NUM_TOKEN
+
+//                                    ]
+
+boolean relation(){
+    
+    if(debugSYNT)         printf("relation\n");
+
+    if( simple_expression() ){
+
+        nextToken();
+
+        if( SYM_COUR.CODE == EGAL_TOKEN || SYM_COUR.CODE == MULT_AFFEC_TOKEN || SYM_COUR.CODE == DIV_AFFEC_TOKEN 
+        || SYM_COUR.CODE == INF_TOKEN || SYM_COUR.CODE == INFEG_TOKEN || SYM_COUR.CODE == SUP_TOKEN || SYM_COUR.CODE == SUPEG_TOKEN ){
+
+            Token temp = SYM_COUR;
+
+            nextToken();
+            
+            boolean drap = simple_expression();
+
+            switch((int)temp . CODE){
+                case(EGAL_TOKEN) : {
+                    GENERER1(EQL);
+                    break;
+                }
+                case(MULT_AFFEC_TOKEN) : {
+                    GENERER1(MULT_AFFEC);
+                    break;
+                }
+                case(DIV_AFFEC_TOKEN) : {
+                    GENERER1(NEQ);
+                    break;
+                }
+                case(INF_TOKEN) : {
+                    GENERER1(LSS);
+                    break;
+                }
+                case(INFEG_TOKEN) : {
+                    GENERER1(LEQ);
+                    break;
+                }
+                case(SUP_TOKEN) : {
+                    GENERER1(GTR);
+                    break;
+                }
+                case(SUPEG_TOKEN) : {
+                    GENERER1(GEQ);
+                    break;
+                }
+                
+            }
+
+            return drap;
+
+        }
+
+        if ( SYM_COUR.CODE == NOT_TOKEN || SYM_COUR.CODE == IN_TOKEN ) {
+
+            nextToken();
+
+            if( SYM_COUR.CODE == NUM_TOKEN){
+
+                nextToken();
+
+                if( SYM_COUR.CODE == PT_TOKEN){
+
+                    nextToken();
+
+                    if( SYM_COUR.CODE == PT_TOKEN){
+
+                        nextToken();
+
+                        if( SYM_COUR.CODE == NUM_TOKEN){
+
+                            return TRUE;
+
+                        }
+                        else{
+                            detectError(NUM_ERR);
+                            return FALSE;
+                        }
+
+                    }
+                    else{
+                        detectError(DOUBLE_POINT_ERR);
+                        return FALSE;
+                    }
+                }
+                else{
+                    detectError(DOUBLE_POINT_ERR);
+                    return FALSE;
+                }
+
+            }
+            else{
+                detectError(NUM_ERR);
+                return FALSE;
+            }
+
+        }
+
+        follow_token = TRUE;
+
+        return TRUE;
 
     }
 
-    lire_Car();
+    return FALSE;
 
-    memset(SYM_COUR.NOM, '\0', 20); //new word(token)
+}
 
-    while (estBlanc(Car_Cour))
 
-        lire_Car();
 
-    if( Car_Cour == '-'){
 
-        lire_commentaire();
+
+// 34 - simple_expression -> [+ | -] term { (+ | - | &) term }*
+
+boolean simple_expression(){
+    
+    if(debugSYNT)         printf("simple_expression\n");
+
+    if ( SYM_COUR.CODE == PLUS_TOKEN || SYM_COUR.CODE == MOINS_TOKEN ){
+        if(SYM_COUR.CODE == MOINS_TOKEN)
+            drapMINUS = TRUE;
+        nextToken();
 
     }
 
-    while (estBlanc(Car_Cour))
+    if( term()){
 
-        lire_Car();
+        nextToken();
+
+        while( SYM_COUR.CODE == PLUS_TOKEN || SYM_COUR.CODE == MOINS_TOKEN || SYM_COUR.CODE == EC_TOKEN ){
+
+            Token temp = SYM_COUR;
+
+            nextToken();
 
 
-    if( isalpha( Car_Cour) || isAccentLettre() ){
 
-        lire_mot();
+            if( !simple_expression()) return FALSE;
 
+            switch((int)temp . CODE){
+                case(PLUS_TOKEN) : {
+                    GENERER1(ADD);
+                    break;
+                }
+                case(MOINS_TOKEN) : {
+                    GENERER1(SUB);
+                    break;
+                }
+                case(EC_TOKEN) : {
+                    GENERER1(AND);
+                    break;
+                }            
+            }
+            nextToken();
+
+        }   
+
+        follow_token = TRUE;
+
+        return TRUE;
+
+    }
+
+    return FALSE;
+
+}
+
+
+
+// 35 - term  -> factor {(* | / | mod | rem | **) factor}*
+
+boolean term(){if(debugSYNT)         printf("term\n");
+
+    if( factor()){
+
+        nextToken();
+
+        while( SYM_COUR.CODE == MULT_TOKEN || SYM_COUR.CODE == DIV_TOKEN || SYM_COUR.CODE == MOD_TOKEN){
+
+            Token temp = SYM_COUR;
+
+            if(SYM_COUR.CODE == MULT_TOKEN){
+                nextToken();
+                if(SYM_COUR.CODE == MULT_TOKEN){
+                    nextToken();
+                }
+            }
+            else
+                nextToken();
+            
+            
+
+            if( !simple_expression()) return FALSE;
+
+
+            switch((int)temp . CODE){
+                case(MULT_TOKEN) : {
+                    GENERER1(MUL);
+                    break;
+                }
+                case(DIV_TOKEN) : {
+                    GENERER1(DIV);
+                    break;
+                }
+                case(MOD_TOKEN) : {
+                    GENERER1(MOD);
+                    break;
+                }            
+            }
+
+            nextToken();
+
+        }
+
+        follow_token = TRUE;
+
+        return TRUE;
+
+    }
+
+    return FALSE;
+
+}
+
+// 36 - factor -> primary 
+
+        // | abs primary
+
+        // |not primary
+
+        // | - primary
+
+        // | + primary
+
+
+boolean factor(){
+    
+    if(debugSYNT)         printf("factor\n");
+
+    if( SYM_COUR.CODE == ABS_TOKEN || SYM_COUR.CODE == NOT_TOKEN || SYM_COUR.CODE == PLUS_TOKEN || SYM_COUR.CODE == MOINS_TOKEN){
+        nextToken();
     }
         
-    else if( isdigit( Car_Cour) ){
+    return primary();
+}
 
-            lire_nombre();
+
+
+// 37 - primary -> NULL_TOKEN | STRING_TOKEN | id | NUM_TOKEN | FLOAT_TOKEN  | '(' expression ')'
+   
+boolean primary(){
+    
+    if(debugSYNT)         
+        
+        printf("primary\n");
+
+    char currIDF[100];
+
+    if ( SYM_COUR.CODE == NULL_TOKEN || SYM_COUR.CODE == STRING_TOKEN || SYM_COUR.CODE == ID_TOKEN || SYM_COUR.CODE == NUM_TOKEN || SYM_COUR.CODE == TRUE_TOKEN ||  SYM_COUR.CODE == FALSE_TOKEN || SYM_COUR.CODE == FLOAT_TOKEN){
+        
+        if(SYM_COUR.CODE == ID_TOKEN){
+            
+            strcpy(currIDF, SYM_COUR.NOM);
+
+            nextToken();
+            
+            if(SYM_COUR.CODE == APP_TOKEN){
+
+                nextToken();
+                
+                if(SYM_COUR.CODE == FIRST_TOKEN || SYM_COUR.CODE == LAST_TOKEN){
+                    
+                    return TRUE;
+                
+                }
+                
+                else return FALSE;
+            
+            }
+            else{
+                if(SYM_COUR.CODE == PO_TOKEN){
+
+                verifIDexist(TFUNC, currIDF);
+            
+                nextToken();
+
+                if(params()){
+
+                    nextToken();
+
+                    if(strcmp(SYM_COUR.NOM, ")") == 0){            
+
+                            return TRUE;
+
+                        }
+                        else{
+                            detectError(PF_ERR);
+                            return FALSE;
+                        }
+                    }
+                    else
+                        return FALSE;
+                }
+                else{
+
+                    int indice = verifIDexist(TBOTH, currIDF);
+
+                    last_IND = indice;
+                    
+                    GENERER2(LDA, TAB_IDFS[indice].ADRESSE);
+                    
+                    GENERER1(LDV);
+                    
+                    follow_token = TRUE;
+                    
+                    return TRUE;
+                }
+            }
+        
+        }
+
+        if(SYM_COUR.CODE == NUM_TOKEN || SYM_COUR.CODE == FLOAT_TOKEN){
+
+            GENERER2(LDI, (drapMINUS? -1:1) * atoi(SYM_COUR.NOM));
+
+            drapMINUS = FALSE;
+
+        }
+
+        if(SYM_COUR.CODE == TRUE_TOKEN){
+            GENERER2(LDI, 1);
+        }
+        if(SYM_COUR.CODE == FALSE_TOKEN){
+            GENERER2(LDI, 0);
+        }
+
+        return TRUE;
 
     }
 
-    else{ // caractere speciaux
+    else if( SYM_COUR.CODE == PO_TOKEN ){
 
-            lire_spcial();
+        nextToken();
+
+        if ( expression() ){
+
+            nextToken();
+
+            if( SYM_COUR.CODE == PF_TOKEN ){
+
+                return TRUE;
+
+            }
+
+        }
 
     }
-    LAST = SYM_COUR.CODE;
+
+    return FALSE;
+
+}
+
+
+
+//pragma ::= pragma identifier [(pragma_argument_association {, pragma_argument_association})];
+
+boolean pragma(){
+    if(debugSYNT)         printf("pragma\n");
+    if(SYM_COUR.CODE == PRAGMA_TOKEN){
+        nextToken();
+        if(SYM_COUR.CODE == ID_TOKEN){
+            nextToken();
+            if(SYM_COUR.CODE == PV_TOKEN)
+                return TRUE;
+            if(pragma_argument_association()){
+                nextToken();
+                while(SYM_COUR.CODE == VIR_TOKEN){
+                    if(!pragma_argument_association())
+                        return FALSE;
+                    nextToken();
+                }
+                if(SYM_COUR.CODE == PV_TOKEN)
+                return TRUE;
+            }
+        }
+    }
+    return FALSE;
+}
+
+// pragma_argument_association ::= [id =>] expression
+
+boolean pragma_argument_association(){
+    if(debugSYNT)         printf("pragma_argument_association\n");
+    if(SYM_COUR.CODE == ID_TOKEN){
+        nextToken();
+        if(SYM_COUR.CODE == EGAL_TOKEN){
+            nextToken();
+            if(SYM_COUR.CODE == SUP_TOKEN){
+                nextToken();
+                if(expression()){
+                    return TRUE;
+                }
+            }
+        }
+        else{
+            follow_token = TRUE;
+            return expression();
+        }
+    }
+    return FALSE;
+}
+
+// package_body ::= package package_body_aux
+boolean package_body(){
+    
+    if(debugSYNT)         printf("package_body\n");
+
+    if ( SYM_COUR.CODE == PACKAGE_TOKEN){
+        nextToken();
+        return package_body_aux();
+    }
+
+    return FALSE;
+}
+
+
+// package_body_aux ::= body package_body_adb | package_body_ads
+boolean package_body_aux(){
+    if(debugSYNT)         printf("package_body_aux\n");
+    if( SYM_COUR.CODE == BODY_TOKEN){
+        nextToken();
+        return package_body_adb();
+    } else{
+        return package_body_ads();
+    }
+    return FALSE;
+}
+
+// package_body_adb ::= IDF
+//             [ refinement_definition ]
+//               is
+//                 package_implementation
+//               end IDF;
+boolean package_body_adb(){
+    if(debugSYNT)         printf("package_body_adb\n");
+    if( SYM_COUR.CODE == ID_TOKEN){
+        nextToken();
+        if(SYM_COUR.CODE == WITH_TOKEN){
+            if (!refinement_definition()) return FALSE;
+            nextToken();
+        }
+        if( SYM_COUR.CODE == IS_TOKEN){
+            nextToken();
+            if( package_implementation() ){
+                nextToken();
+                if( SYM_COUR.CODE == END_TOKEN){
+                    nextToken();
+                    if( SYM_COUR.CODE == ID_TOKEN) {
+                        nextToken();
+                        if( SYM_COUR.CODE == PV_TOKEN){
+                            return TRUE;
+                        }
+                        else detectError(PV_ERR);
+                    }
+                    else detectError(ID_ERR);
+                }
+                else detectError(END_ERR);
+            }
+        }
+        else detectError(IS_ERR);
+    }
+    detectError(ID_ERR);
+    return FALSE;
+}
+
+
+// *  refinement_definition :: with IDF;
+
+boolean refinement_definition(){
+        if(debugSYNT)         printf("refinement_definition\n");
+
+    if( SYM_COUR.CODE == WITH_TOKEN){
+        nextToken();
+        if( SYM_COUR.CODE == ID_TOKEN){
+            nextToken();
+            if( SYM_COUR.CODE == PV_TOKEN){
+                return TRUE;   
+            }
+            else detectError(PV_ERR);
+        }
+        else detectError(ID_ERR);
+    }
+    return FALSE;
+}
+
+
+//  * package_implementation ::=
+//               declarative_part
+//               begin
+//                    sequence_of_statements <=============== attention
+boolean package_implementation(){
+        if(debugSYNT)         printf("package_implementation\n");
+        while (SYM_COUR.CODE == TYPE_TOKEN || SYM_COUR.CODE == ID_TOKEN || SYM_COUR.CODE == FUNCTION_TOKEN || SYM_COUR.CODE == PROCEDURE_TOKEN){
+            if(!basic_declaration()) return FALSE;
+                
+            nextToken();
+        }
+        if( SYM_COUR.CODE == BEGIN_TOKEN){
+            nextToken();
+        
+            if( sequence_statement()){
+                return TRUE;   
+            }
+        }
+        else{
+            follow_token = TRUE;
+            return TRUE;
+        }
+        return FALSE;
+    }
+
+// * package_body_ads ::= IDF
+//             [ refinement_definition ]
+//               is
+//                 declarative_part
+//               end IDF;
+boolean package_body_ads(){
+    
+    if(debugSYNT)         printf("package_body_ads\n");
+
+    if( SYM_COUR.CODE == ID_TOKEN){
+        nextToken();
+        if(SYM_COUR.CODE == WITH_TOKEN){
+            if (!refinement_definition()) return FALSE;
+            nextToken();
+        }
+        if( SYM_COUR.CODE == IS_TOKEN){
+
+            while (SYM_COUR.CODE == TYPE_TOKEN || SYM_COUR.CODE == ID_TOKEN || SYM_COUR.CODE == FUNCTION_TOKEN || SYM_COUR.CODE == PROCEDURE_TOKEN){
+
+                if(!basic_declaration()) return FALSE;
+                
+                nextToken();
+            }
+            
+            if( SYM_COUR.CODE == END_TOKEN){
+                nextToken();
+                if( SYM_COUR.CODE == ID_TOKEN) {
+                    nextToken();
+                    if( SYM_COUR.CODE == PV_TOKEN){
+                        return TRUE;
+                    }
+                    else detectError(PV_ERR);
+                }
+                else detectError(ID_ERR);
+            }
+            else detectError(END_ERR);
+        }
+        else detectError(IS_ERR);
+    }
+    else detectError(ID_ERR);
+    return FALSE;
+}
+
+// main_program -> list_with_use_clause [package_body | sub]
+
+boolean main_program(){
+    
+    if(debugSYNT)         printf("main_program\n");
+
+
+    boolean result = FALSE;
+
+    while(SYM_COUR.CODE == USE_TOKEN || SYM_COUR.CODE == WITH_TOKEN){
+
+        with_use_clause();
+
+        nextToken();
+
+    }
+    if(SYM_COUR.CODE == PACKAGE_TOKEN){
+        if(package_body()){
+            GENERER1(HLT);
+            return TRUE;
+        }
+    }
+    else{
+        if(subprogram_body()){
+            GENERER1(HLT);
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+
+boolean print(){
+    if(debugLEX)
+        printf("print\n");
+
+    // ECRIRE ::= print ( EXPR { , EXPR } );
+    if(PRINT_TOKEN != SYM_COUR.CODE)
+        return FALSE;
+    nextToken();
+    if(PO_TOKEN != SYM_COUR.CODE){
+        detectError(PO_ERR);
+        return FALSE;
+    }
+    nextToken();
+    if(!expression())
+        return FALSE;
+    GENERER1(PRN);
+    nextToken();
+    while(SYM_COUR.CODE == VIR_TOKEN){
+        nextToken();
+        if(!expression())
+        return FALSE;
+        GENERER1(PRN);
+        nextToken();
+    }
+    if(PF_TOKEN != SYM_COUR.CODE){
+        detectError(PF_ERR);
+        return FALSE;
+    }
+    nextToken();
+    if(PV_TOKEN != SYM_COUR.CODE){
+        detectError(PV_ERR);
+        return FALSE;
+    }
+    return TRUE;
+}
+
+boolean read(){
+    if(debugLEX)
+        printf("READ\n");
+    // LIRE ::= read ( ID { , ID } );
+    if(READ_TOKEN != SYM_COUR.CODE)
+        return FALSE;
+    
+    nextToken();
+    if(PO_TOKEN != SYM_COUR.CODE){
+        detectError(PO_ERR);
+        return FALSE;
+    }
+    
+    nextToken();
+
+    if(ID_TOKEN != SYM_COUR.CODE){
+        detectError(PO_ERR);
+        return FALSE;
+    }
+
+    int indice = verifIDexist(TVAR, SYM_COUR.NOM);
+
+    GENERER2(LDA, TAB_IDFS[indice].ADRESSE);
+
+    GENERER1(INN);
+
+    nextToken();
+
+    while(SYM_COUR.CODE == VIR_TOKEN){
+        nextToken();
+        if(ID_TOKEN != SYM_COUR.CODE){
+            detectError(ID_ERR);
+            return FALSE;
+        }
+        int ind = verifIDexist(TVAR, SYM_COUR.NOM);
+        GENERER2(LDA, TAB_IDFS[ind].ADRESSE);
+        GENERER1(INN);
+        nextToken();
+    }
+
+    if(PF_TOKEN != SYM_COUR.CODE){
+        detectError(PF_ERR);
+        return FALSE;
+    }
+    nextToken();
+    if(PV_TOKEN != SYM_COUR.CODE){
+        detectError(PV_ERR);
+        return FALSE;
+    }
+    return TRUE;
 }
 
 
