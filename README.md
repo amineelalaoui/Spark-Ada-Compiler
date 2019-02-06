@@ -1,7 +1,7 @@
 # Spark-Ada-Compiler
-Basic spark ada 2012 Compiler
+Basic spark ada Compiler
 
-spark ada grammar : 
+spark ada grammar used by this compiler : 
 
 
 1 - program -> [with_use_clause]* subprogram_body
